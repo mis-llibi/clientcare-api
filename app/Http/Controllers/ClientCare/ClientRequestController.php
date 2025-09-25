@@ -14,6 +14,8 @@ use App\Models\ClientCare\Hospital;
 use App\Models\ClientCare\Callback;
 use Illuminate\Support\Facades\DB;
 use App\Models\ClientCare\DoctorsClinics;
+use App\Models\ClientCare\Doctor;
+use App\Services\SendingEmail;
 
 class ClientRequestController extends Controller
 {
@@ -230,4 +232,109 @@ class ClientRequestController extends Controller
             'doctors' => $findDoctors
         ], 200);
     }
+
+    public function submitUpdateRequest(Request $request){
+
+        $complaints = $request->complaint;
+        $refno = $request->refno;
+        $doctor_id = (int) $request->doctor;
+        $doctor_name = "";
+
+        $email = $request->email;
+        $contact = $request->contact;
+
+        $combinedComplaints = collect($complaints)
+            ->pluck('label')        // get only the "label" values
+            ->implode(', ');        // join them with comma + space
+
+
+        $findClientId = DB::connection('portal_request_db')
+                        ->table('app_portal_clients as c')
+                        ->leftJoin('app_portal_requests as r', 'r.client_id', '=', 'c.id')
+                        ->where('c.reference_number', $refno)
+                        ->select(['c.id'])
+                        ->first();
+
+        // Find doctor
+        if($doctor_id != 0){
+            $doctor = Doctor::where('id', $doctor_id)->first();
+            $doctor_name = $doctor->last . ", " . $doctor->first . "++" . $doctor->specialization;
+        }else{
+            $doctor_name = ", ++";
+        }
+
+        $clientRequestData = [
+            'complaint' => $combinedComplaints,
+            'doctor_id' => $doctor_id,
+            'doctor_name' => $doctor_name,
+            'loa_status' => "Pending Approval"
+        ];
+        $clientRequest = ClientRequest::where('client_id', $findClientId->id)->first();
+        $clientRequest->update($clientRequestData);
+
+        $client = Client::where('id', $findClientId->id)->first();
+        $clientData = [
+            'status' => 2,
+            'alt_email' => $email,
+            'contact' => $contact
+        ];
+        $client->update($clientData);
+
+        $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . ' ' . $client->last_name;
+        $time = "15 - 30";
+
+        $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
+
+        if($client->alt_email){
+            $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
+        }
+
+        if($client->contact){
+
+            $sms =
+            "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
+
+            $this->SendSMS($client->contact, $sms);
+        }
+
+        return $client;
+
+
+
+    }
+
+    private function SendEmail($patientName, $time, $ref_no, $email){
+
+        $body = view('send-request-loa-notification', [
+            'name' => $patientName,
+            'within' => $time,
+            'ref' => $ref_no
+        ]);
+
+        $emailer = new SendingEmail(email: $email, body: $body, subject: 'PROVIDER PORTAL - ACCOUNT NOTIFICATION');
+
+        $emailer->send();
+
+        return true;
+
+    }
+
+    private function SendSMS($sms, $message){
+        $ch = curl_init('http://192.159.66.221/goip/sendsms/');
+
+        $parameters = array(
+            'auth' => array('username' => "root", 'password' => "LACSONSMS"), //Your API KEY
+            'provider' => "SIMNETWORK2",
+            'number' => $sms,
+            'content' => $message,
+          );
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        //Send the parameters set above with the request
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($parameters));
+
+        // Receive response from server
+        $output = curl_exec($ch);
+        curl_close($ch);
+    }
+
 }
