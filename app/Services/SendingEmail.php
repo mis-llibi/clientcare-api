@@ -64,7 +64,7 @@ class SendingEmail{
                 ]
             ];
             $client = new Client();
-            $response = $client->post(env('INFOBIP_API_URL') . '/email/3/send', $post_data);
+            $response = $client->post(config('app.INFOBIP_API_URL') . '/email/3/send', $post_data);
             $body = $response->getBody();
             Log::info('EMAIL SENT');
             return true;

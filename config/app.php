@@ -88,6 +88,8 @@ return [
         ? env('FRONTEND_URL', 'http://localhost:3000')
         : env('DEPLOYED_FRONTEND_URL', 'https://client-care-frontend.vercel.app'),
 
+    'INFOBIP_API_URL' => env('https://zjn9lx.api.infobip.com'),
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key
