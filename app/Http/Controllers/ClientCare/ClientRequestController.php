@@ -71,7 +71,7 @@ class ClientRequestController extends Controller
 
 
         if($verificationDetailsType == "insurance"){
-            $findPatient = Masterlist::where('member_id', $erCardNumber)
+            $findPatient = Masterlist::where('member_id', strtoupper($erCardNumber))
                                         ->where('birth_date', $dob)
                                         ->first();
         }else{
