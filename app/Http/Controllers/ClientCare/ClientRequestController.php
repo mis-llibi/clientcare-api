@@ -283,19 +283,19 @@ class ClientRequestController extends Controller
         $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . ' ' . $client->last_name;
         $time = "15 - 30";
 
-        $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
+        // $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
 
-        if($client->alt_email){
-            $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
-        }
+        // if($client->alt_email){
+        //     $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
+        // }
 
-        if($client->contact){
+        // if($client->contact){
 
-            $sms =
-            "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
+        //     $sms =
+        //     "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
 
-            $this->SendSMS($client->contact, $sms);
-        }
+        //     $this->SendSMS($client->contact, $sms);
+        // }
 
         return $client;
 
