@@ -53,7 +53,8 @@ class ClientRequestController extends Controller
             'provider_email' => ['required', 'string'],
             'verificationDetailsType' => ['required', 'string'],
             'employeeFirstName' => ['nullable', 'string'],
-            'employeeLastName' => ['nullable', 'string']
+            'employeeLastName' => ['nullable', 'string'],
+            'loa_type' => ['required', 'string']
         ]);
 
 
@@ -68,6 +69,7 @@ class ClientRequestController extends Controller
         $patientFirstName = $validated['patientFirstName'];
         $employeeFirstName = $validated['employeeFirstName'] ?? null;
         $employeeLastName = $validated['employeeLastName'] ?? null;
+        $loa_type = $validated['loa_type'];
 
 
         if($verificationDetailsType == "insurance"){
@@ -146,7 +148,7 @@ class ClientRequestController extends Controller
                 ($provider->city ?? "") . "++" .
                 ($provider->state ?? "") . "++" .
                 ($provider->email1 ?? ""),
-            'loa_type' => "consultation",
+            'loa_type' => $loa_type,
         ];
 
         $callback = [
@@ -156,7 +158,7 @@ class ClientRequestController extends Controller
         ClientRequest::create($clientRequest);
         Callback::create($callback);
 
-        $request_link = config('app.frontend') . '/provider/' . $provider_id . "/" . $client->reference_number . '?provider=' . $provider->name;
+        $request_link = config('app.frontend') . '/provider/'. $loa_type . "/" . $provider_id . "/" . $client->reference_number;
 
         return $request_link;
 
@@ -168,6 +170,7 @@ class ClientRequestController extends Controller
 
         $provider_id = $request->id;
         $refno = $request->refno;
+        $loa_type = $request->loa_type;
 
         $doneUpdate = [2,3,4];
 
@@ -178,6 +181,7 @@ class ClientRequestController extends Controller
                     ->leftJoin('app_portal_requests as r', 'r.client_id', '=', 'c.id')
                     ->where('c.reference_number', $refno)
                     ->where('r.provider_id', $provider_id)
+                    ->where('r.loa_type', $loa_type)
                     ->select(
                             'c.reference_number',
                             DB::raw("
@@ -214,7 +218,8 @@ class ClientRequestController extends Controller
 
         $findDoctors = DoctorsClinics::select([
                 'doctors_clinics.doctors_id as value',
-                DB::raw("CONCAT(doctors.last, ', ', doctors.first, ' - ', doctors.specialization) as name")
+                DB::raw("CONCAT(doctors.last, ', ', doctors.first, ' - ', doctors.specialization) as name"),
+                'hospitals.name as provider'
             ])
             ->leftJoin('doctors', 'doctors_clinics.doctors_id', '=', 'doctors.id')
             ->rightJoin('hospitals', 'doctors_clinics.hospital_id', '=', 'hospitals.id')
@@ -229,7 +234,8 @@ class ClientRequestController extends Controller
         return response()->json([
             'isSubmitted' => false,
             'data' => $checker,
-            'doctors' => $findDoctors
+            'doctors' => $findDoctors,
+            'provider' => $findDoctors[0]['provider']
         ], 200);
     }
 
