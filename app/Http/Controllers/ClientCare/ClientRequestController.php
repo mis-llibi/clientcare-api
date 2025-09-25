@@ -289,13 +289,13 @@ class ClientRequestController extends Controller
             $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
         }
 
-        // if($client->contact){
+        if($client->contact){
 
-        //     $sms =
-        //     "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
+            $sms =
+            "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
 
-        //     $this->SendSMS($client->contact, $sms);
-        // }
+            $this->SendSMS($client->contact, $sms);
+        }
 
         return $client;
 
