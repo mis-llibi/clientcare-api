@@ -227,6 +227,8 @@ class ClientRequestController extends Controller
             ->orderBy('doctors.last')
             ->get();
 
+        $findProvider = Hospital::where('id', $provider_id)->select('name')->first();
+
 
 
 
@@ -235,7 +237,7 @@ class ClientRequestController extends Controller
             'isSubmitted' => false,
             'data' => $checker,
             'doctors' => $findDoctors,
-            'provider' => $findDoctors[0]['provider']
+            'provider' => $findProvider->name
         ], 200);
     }
 
