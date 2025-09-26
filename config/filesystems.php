@@ -47,6 +47,21 @@ return [
             'report' => false,
         ],
 
+        'llibiapp' => [
+        'driver' => 's3',
+        'key' => env('DO_LLIBI_ACCESS_KEY_ID'),
+        'secret' => env('DO_LLIBI_SECRET_ACCESS_KEY'),
+        'region' => env('DO_LLIBI_DEFAULT_REGION'),
+        'bucket' => env('DO_LLIBI_BUCKET'),
+        'cdn_endpoint' => env('DO_LLIBI_CDN_ENDPOINT'),
+        'url' => env('DO_LLIBI_URL'),
+        'endpoint' => env('DO_LLIBI_ENDPOINT'),
+        'bucket_endpoint' => true,
+        'use_path_style_endpoint' => env('DO_LLIBI_USE_PATH_STYLE_ENDPOINT', false),
+        'visibility' => 'public',
+        'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

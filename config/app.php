@@ -90,6 +90,8 @@ return [
 
     'INFOBIP_API_URL' => env('INFOBIP_API_URL'),
 
+    'DO_ENDPOINT' => env('DO_LLIBI_CDN_ENDPOINT'),
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key

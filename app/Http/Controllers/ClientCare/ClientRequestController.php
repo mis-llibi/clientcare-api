@@ -15,6 +15,7 @@ use App\Models\ClientCare\Callback;
 use Illuminate\Support\Facades\DB;
 use App\Models\ClientCare\DoctorsClinics;
 use App\Models\ClientCare\Doctor;
+use App\Models\ClientCare\Attachment;
 use App\Services\SendingEmail;
 
 class ClientRequestController extends Controller
@@ -158,7 +159,7 @@ class ClientRequestController extends Controller
         ClientRequest::create($clientRequest);
         Callback::create($callback);
 
-        $request_link = config('app.frontend') . '/provider/'. $loa_type . "/" . $provider_id . "/" . $client->reference_number;
+        $request_link = config('app.frontend') . '/provider/'. $provider_id . "/" . $loa_type . "/" . $client->reference_number;
 
         return $request_link;
 
@@ -241,7 +242,7 @@ class ClientRequestController extends Controller
         ], 200);
     }
 
-    public function submitUpdateRequest(Request $request){
+    public function submitUpdateRequestConsultation(Request $request){
 
         $complaints = $request->complaint;
         $refno = $request->refno;
@@ -305,8 +306,80 @@ class ClientRequestController extends Controller
             $this->SendSMS($client->contact, $sms);
         }
 
-        return $client;
+        return response(201);
+    }
 
+    public function submitUpdateRequestLaboratory(Request $request){
+
+        $request->validate([
+            'contact' => ['nullable'],
+            'email' => ['email', 'nullable'],
+            'files'   => ['required', 'array'],     // ✅ must be an array
+            'files.*' => ['file', 'mimes:pdf,jpg,png'], // ✅ each item must be a file,
+            'refno' => ['integer'],
+            'hospital' => ['string']
+        ]);
+
+        $refno = $request->refno;
+        $contact = $request->contact;
+        $email = $request->email;
+
+
+        $findClientId = DB::connection('portal_request_db')
+                        ->table('app_portal_clients as c')
+                        ->leftJoin('app_portal_requests as r', 'r.client_id', '=', 'c.id')
+                        ->where('c.reference_number', $refno)
+                        ->select(['c.id'])
+                        ->first();
+
+        $clientRequestData = [
+            'loa_status' => "Pending Approval"
+        ];
+
+        $clientRequest = ClientRequest::where('client_id', $findClientId->id)->first();
+
+
+        $client = Client::where('id', $findClientId->id)->first();
+        $clientData = [
+            'status' => 2,
+            'alt_email' => $email,
+            'contact' => $contact
+        ];
+
+        $client->update($clientData);
+        $clientRequest->update($clientRequestData);
+
+        if($request->hasFile('files')){
+            foreach($request->file('files') as $file){
+                $path = $file->storeAs('Self-service/LAB/' . $refno, $file->getClientOriginalName(), 'llibiapp');
+                $name = $file->getClientOriginalName();
+
+                Attachment::create([
+                    'request_id' => $client->id,
+                    'file_name' => $name,
+                    'file_link' => config('app.DO_ENDPOINT') . "/" . $path
+                ]);
+            }
+        }
+
+        $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . ' ' . $client->last_name;
+        $time = "30 - 45";
+
+        $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
+
+        if($client->alt_email){
+            $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
+        }
+
+        if($client->contact){
+
+            $sms =
+            "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
+
+            $this->SendSMS($client->contact, $sms);
+        }
+
+        return response(201);
 
 
     }

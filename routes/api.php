@@ -13,4 +13,5 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 Route::get('/get-provider-id', [ClientRequestController::class, 'getProviderId']);
 Route::get('/update-client-request', [ClientRequestController::class, 'updateClientRequest']);
 Route::post('/submit-client-request', [ClientRequestController::class, 'submitRequest']);
-Route::post('/submit-update-request', [ClientRequestController::class, 'submitUpdateRequest']);
+Route::post('/submit-update-request/consultation', [ClientRequestController::class, 'submitUpdateRequestConsultation']);
+Route::post('/submit-update-request/laboratory', [ClientRequestController::class, 'submitUpdateRequestLaboratory']);
