@@ -252,6 +252,8 @@ class ClientRequestController extends Controller
         $email = $request->email;
         $contact = $request->contact;
 
+        $provider_id = $request->provider_id;
+
         $combinedComplaints = collect($complaints)
             ->pluck('label')        // get only the "label" values
             ->implode(', ');        // join them with comma + space
@@ -264,6 +266,10 @@ class ClientRequestController extends Controller
                         ->select(['c.id'])
                         ->first();
 
+        // Find hospital in provider db
+        $provider = ProviderPortal::where('provider_id', $provider_id)
+                                    ->where('user_type', 'Hospital')
+                                    ->first();
         // Find doctor
         if($doctor_id != 0){
             $doctor = Doctor::where('id', $doctor_id)->first();
@@ -306,23 +312,31 @@ class ClientRequestController extends Controller
             $this->SendSMS($client->contact, $sms);
         }
 
+        if($provider->notification_sms){
+            $smsProvider =
+            "This is contact sms from provider";
+
+            $this->SendSMS($provider->notification_sms, $smsProvider);
+        }
+
         return response(201);
     }
 
     public function submitUpdateRequestLaboratory(Request $request){
-
         $request->validate([
             'contact' => ['nullable'],
             'email' => ['email', 'nullable'],
             'files'   => ['required', 'array'],     // ✅ must be an array
             'files.*' => ['file', 'mimes:pdf,jpg,png'], // ✅ each item must be a file,
             'refno' => ['integer'],
-            'hospital' => ['string']
+            'hospital' => ['string'],
+            'provider_id' => ['integer']
         ]);
 
         $refno = $request->refno;
         $contact = $request->contact;
         $email = $request->email;
+        $provider_id = $request->provider_id;
 
 
         $findClientId = DB::connection('portal_request_db')
@@ -337,6 +351,11 @@ class ClientRequestController extends Controller
         ];
 
         $clientRequest = ClientRequest::where('client_id', $findClientId->id)->first();
+
+        // Find provider in provider db
+        $provider = ProviderPortal::where('provider_id', $provider_id)
+                                    ->where('user_type', 'Hospital')
+                                    ->first();
 
 
         $client = Client::where('id', $findClientId->id)->first();
@@ -377,6 +396,13 @@ class ClientRequestController extends Controller
             "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
 
             $this->SendSMS($client->contact, $sms);
+        }
+
+        if($provider->notification_sms){
+            $smsProvider =
+            "This is contact sms from provider";
+
+            $this->SendSMS($provider->notification_sms, $smsProvider);
         }
 
         return response(201);
