@@ -258,12 +258,12 @@ class DesktopClientRequestController extends Controller
     }
 
     private function SendEmail($patientName, $time, $ref_no, $email){
-        $body = view('send-request-loa-notification', [
+        $body = view('send-request-loa-notification-patient', [
             'name' => $patientName,
             'within' => $time,
             'ref' => $ref_no
         ]);
-        $emailer = new SendingEmail(email: $email, body: $body, subject: 'PROVIDER PORTAL - ACCOUNT NOTIFICATION');
+        $emailer = new SendingEmail(email: $email, body: $body, subject: 'CLIENT CARE PORTAL - ACCOUNT NOTIFICATION');
         $emailer->send();
         return true;
     }

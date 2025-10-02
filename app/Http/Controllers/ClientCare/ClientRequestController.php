@@ -298,10 +298,10 @@ class ClientRequestController extends Controller
         $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . ' ' . $client->last_name;
         $time = "15 - 30";
 
-        $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
+        $this->SendEmailHospital($provider->provider, $time, $client->reference_number, $client->email, $patientName);
 
         if($client->alt_email){
-            $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
+            $this->SendEmailPatient($patientName, $time, $client->reference_number, $client->alt_email);
         }
 
         if($client->contact){
@@ -384,10 +384,10 @@ class ClientRequestController extends Controller
         $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . ' ' . $client->last_name;
         $time = "30 - 45";
 
-        $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
+        $this->SendEmailHospital($provider->provider, $time, $client->reference_number, $client->email, $patientName);
 
         if($client->alt_email){
-            $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
+            $this->SendEmailPatient($patientName, $time, $client->reference_number, $client->alt_email);
         }
 
         if($client->contact){
@@ -410,15 +410,32 @@ class ClientRequestController extends Controller
 
     }
 
-    private function SendEmail($patientName, $time, $ref_no, $email){
+    private function SendEmailHospital($provider_name, $time, $ref_no, $email, $patient_name){
 
-        $body = view('send-request-loa-notification', [
+        $body = view('send-request-loa-notification-hospital', [
+            'provider_name' => $provider_name,
+            'within' => $time,
+            'ref' => $ref_no,
+            'patient_name' => $patient_name
+        ]);
+
+        $emailer = new SendingEmail(email: $email, body: $body, subject: 'CLIENT CARE PORTAL - ACCOUNT NOTIFICATION');
+
+        $emailer->send();
+
+        return true;
+
+    }
+
+    private function SendEmailPatient($patientName, $time, $ref_no, $email){
+
+        $body = view('send-request-loa-notification-patient', [
             'name' => $patientName,
             'within' => $time,
             'ref' => $ref_no
         ]);
 
-        $emailer = new SendingEmail(email: $email, body: $body, subject: 'PROVIDER PORTAL - ACCOUNT NOTIFICATION');
+        $emailer = new SendingEmail(email: $email, body: $body, subject: 'CLIENT CARE - ACCOUNT NOTIFICATION');
 
         $emailer->send();
 
