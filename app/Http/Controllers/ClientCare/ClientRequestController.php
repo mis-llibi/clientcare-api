@@ -435,7 +435,7 @@ class ClientRequestController extends Controller
             'ref' => $ref_no
         ]);
 
-        $emailer = new SendingEmail(email: $email, body: $body, subject: 'CLIENT CARE - ACCOUNT NOTIFICATION');
+        $emailer = new SendingEmail(email: $email, body: $body, subject: 'CLIENT CARE PORTAL - ACCOUNT NOTIFICATION');
 
         $emailer->send();
 
