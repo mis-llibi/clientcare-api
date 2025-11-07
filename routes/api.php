@@ -23,3 +23,4 @@ Route::post('/submit-update-request/laboratory', [ClientRequestController::class
 Route::get('/client-search-hospital', [DesktopClientRequestController::class, 'searchHospital']);
 Route::get('/client-search-doctor', [DesktopClientRequestController::class, 'searchDoctor']);
 Route::post('/submit-request-consultation', [DesktopClientRequestController::class, 'submitRequestConsultation']);
+Route::post('/submit-request-laboratory', [DesktopClientRequestController::class, 'submitRequestLaboratory']);

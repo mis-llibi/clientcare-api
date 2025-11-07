@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\ClientCare;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClientCare\Attachment;
 use App\Models\ClientCare\Callback;
 use App\Models\ClientCare\Client;
 use App\Models\ClientCare\ClientRequest;
@@ -212,6 +213,151 @@ class DesktopClientRequestController extends Controller
         $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name
                     : $client->first_name . ' ' . $client->last_name;
         $time = "15 - 30";
+
+        $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
+        if($client->alt_email){
+            $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
+        }
+
+        if($client->contact){
+
+            $sms =
+            "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
+
+            $this->SendSMS($client->contact, $sms);
+        }
+
+        return response()->json([
+            'refno' => $client->reference_number
+        ], 201);
+
+
+
+
+
+    }
+
+    public function submitRequestLaboratory(Request $request){
+        $alt_email = $request->alt_email;
+        $contact = $request->contact;
+
+        $dob = $request->dob;
+        $email = $request->email;
+        $loaType = $request->loaType;
+        $patientType = $request->patientType;
+        $providerEmail2 = $request->providerEmail2;
+        $verificationDetailsType = $request->verificationDetailsType;
+        $employeeFirstName = $request->employeeFirstName;
+        $employeeLastName = $request->employeeLastName;
+
+        $erCardNumber = $request->erCardNumber;
+        $patientFirstName = $request->patientFirstName;
+        $patientLastName = $request->patientLastName;
+
+       if($verificationDetailsType === 'insurance'){
+            $findPatient = Masterlist::where('member_id', strtoupper($erCardNumber))
+                                        ->where('birth_date', $dob)
+                                        ->first();
+        }else{
+            $findPatient = Masterlist::where('last_name', strtoupper($patientLastName))
+                                    ->where('first_name', strtoupper($patientFirstName))
+                                    ->where('birth_date', $dob)
+                                    ->first();
+        }
+
+        // Validate if we find the patient
+        if(!$findPatient){
+            return response()->json([
+                'message' => "Cannot find the patient"
+            ], 404);
+        }
+
+        // Validate if the patient is dependent but it doesn't select "Patient is Dependent"
+        if($findPatient->relation != "EMPLOYEE" && $patientType != "dependent"){
+            return response()->json([
+                'message' => "Select the Patient is Dependent"
+            ], 404);
+        }
+
+        if($findPatient->relation == "EMPLOYEE" && $patientType == "dependent"){
+            return response()->json([
+                'message' => "Select the Patient is Employee"
+            ], 404);
+        }
+
+        if(isset($request->provider) && $request->provider != 'undefined'){
+            $provider = explode('--', $request->provider);
+
+            $hospital = explode('||', $provider[0]);
+            $provider_id = $hospital[0];
+            $provider_name = $hospital[1];
+
+            $loa_status = "Pending Approval";
+
+
+
+        }else{
+
+            return response()->json([
+                'message' => "Hospital Error"
+            ], 404);
+
+        }
+
+        $clientData = [
+            'request_type' => 1,
+            'reference_number' => strtotime('now'),
+            'email' => $email,
+            'alt_email' => $alt_email,
+            'contact' => $contact,
+            'member_id' => $patientType == 'employee' ? $findPatient->member_id : null,
+            'first_name' => $patientType == "employee" ? $findPatient->first_name : strtoupper($employeeFirstName),
+            'last_name' => $patientType == "employee" ? $findPatient->last_name : strtoupper($employeeLastName),
+            'dob' => $patientType == "employee" ? $dob : null,
+            'is_dependent' => $patientType == "dependent" ? 1 : null,
+            'dependent_member_id' => $patientType == "dependent" ? $findPatient->member_id : null,
+            'dependent_first_name' => $patientType == "dependent" ? $findPatient->first_name : null,
+            'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
+            'dependent_dob' => $patientType == "dependent" ? $dob : null,
+            'status' => 2,
+            'provider_email2' => $providerEmail2
+        ];
+
+        $client = Client::create($clientData);
+
+        $clientRequestData = [
+            'client_id' => $client->id,
+            'member_id' => $findPatient->member_id,
+            'provider_id' => $provider_id,
+            'provider' => $provider_name,
+            'loa_type' => $loaType,
+            'loa_status' => $loa_status
+        ];
+
+        $callback = [
+            'client_id' => $client->id,
+            'failed_count' => 0
+        ];
+
+        ClientRequest::create($clientRequestData);
+        Callback::create($callback);
+
+        if($request->hasFile('files')){
+            foreach($request->file('files') as $file){
+                $path = $file->storeAs('Self-service/LAB/' . $client->reference_number, $file->getClientOriginalName(), 'llibiapp');
+                $name = $file->getClientOriginalName();
+
+                Attachment::create([
+                    'request_id' => $client->id,
+                    'file_name' => $name,
+                    'file_link' => config('app.DO_ENDPOINT') . "/" . $path
+                ]);
+            }
+        }
+
+        $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name
+                    : $client->first_name . ' ' . $client->last_name;
+        $time = "30 - 45";
 
         $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
         if($client->alt_email){
