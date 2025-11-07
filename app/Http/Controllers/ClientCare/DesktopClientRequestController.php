@@ -273,7 +273,7 @@ class DesktopClientRequestController extends Controller
 
         $parameters = array(
             'auth' => array('username' => "root", 'password' => "LACSONSMS"), //Your API KEY
-            'provider' => "SIMNETWORK2",
+            'provider' => "SIMNETWORK",
             'number' => $sms,
             'content' => $message,
           );
