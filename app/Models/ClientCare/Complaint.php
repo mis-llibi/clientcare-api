@@ -10,4 +10,9 @@ class Complaint extends Model
 
     protected $connection = "portal_request_db";
     protected $table = "app_portal_complaints";
+
+    protected $fillable = [
+        'title',
+        'is_status'
+    ];
 }

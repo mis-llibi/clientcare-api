@@ -31,6 +31,8 @@ class Client extends Model
         'remarks',
         'status',
         'platform',
+        'remaining',
+        'is_complaint_has_approved'
 
     ];
 }

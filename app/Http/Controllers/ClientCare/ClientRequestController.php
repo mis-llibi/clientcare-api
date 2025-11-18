@@ -17,6 +17,11 @@ use App\Models\ClientCare\DoctorsClinics;
 use App\Models\ClientCare\Doctor;
 use App\Models\ClientCare\Attachment;
 use App\Services\SendingEmail;
+use App\Models\ClientCare\RemainingTbl;
+use App\Models\ClientCare\RemainingTblLogs;
+
+// Controller
+use App\Http\Controllers\ClientCare\DesktopClientRequestController;
 
 class ClientRequestController extends Controller
 {
@@ -254,17 +259,23 @@ class ClientRequestController extends Controller
 
         $provider_id = $request->provider_id;
 
-        $combinedComplaints = collect($complaints)
-            ->pluck('label')        // get only the "label" values
-            ->implode(', ');        // join them with comma + space
+
+
 
 
         $findClientId = DB::connection('portal_request_db')
                         ->table('app_portal_clients as c')
                         ->leftJoin('app_portal_requests as r', 'r.client_id', '=', 'c.id')
                         ->where('c.reference_number', $refno)
-                        ->select(['c.id'])
+                        ->select([
+                            'c.id',
+                            'c.member_id'
+                            ])
                         ->first();
+
+        $client = Client::where('id', $findClientId->id)->first();
+        $complaint = new DesktopClientRequestController();
+        $complaints = $complaint->CheckComplaint($complaints, $client);
 
         // Find hospital in provider db
         $provider = ProviderPortal::where('provider_id', $provider_id)
@@ -278,8 +289,28 @@ class ClientRequestController extends Controller
             $doctor_name = ", ++";
         }
 
+        $remaining = RemainingTbl::where('uniquecode', $findClientId->member_id)->first();
+
+        if (!$remaining) {
+
+            // Check if member exists in logs, if not add it
+            RemainingTblLogs::firstOrCreate([
+                'member_id' => $findClientId->member_id
+            ]);
+
+        } else {
+
+            // Decrement only if allow is greater than 0
+            if ($remaining->allow > 0) {
+                RemainingTbl::where('uniquecode', $findClientId->member_id)
+                    ->where('allow', '>', 0)
+                    ->decrement('allow');
+            }
+
+        }
+
         $clientRequestData = [
-            'complaint' => $combinedComplaints,
+            'complaint' => $complaints,
             'doctor_id' => $doctor_id,
             'doctor_name' => $doctor_name,
             'loa_status' => "Pending Approval"
@@ -291,7 +322,8 @@ class ClientRequestController extends Controller
         $clientData = [
             'status' => 2,
             'alt_email' => $email,
-            'contact' => $contact
+            'contact' => $contact,
+            'remaining' => !$remaining ? null : $remaining->allow
         ];
         $client->update($clientData);
 

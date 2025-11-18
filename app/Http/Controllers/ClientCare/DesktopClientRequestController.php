@@ -13,6 +13,11 @@ use App\Models\ClientCare\DoctorsClinics;
 use App\Models\ClientCare\Doctor;
 use App\Models\ClientCare\Masterlist;
 use App\Services\SendingEmail;
+use App\Models\ClientCare\Complaint;
+use App\Models\ClientCare\RemainingTbl;
+use App\Models\ClientCare\RemainingTblLogs;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DesktopClientRequestController extends Controller
 {
@@ -166,6 +171,27 @@ class DesktopClientRequestController extends Controller
 
         }
 
+        $remaining = RemainingTbl::where('uniquecode', $findPatient->member_id)->first();
+
+        // if (!$remaining) {
+
+        //     // Check if member exists in logs, if not add it
+        //     RemainingTblLogs::firstOrCreate([
+        //         'member_id' => $findPatient->member_id
+        //     ]);
+
+        // } else {
+
+        //     // Decrement only if allow is greater than 0
+        //     if ($remaining->allow > 0) {
+        //         RemainingTbl::where('uniquecode', $findPatient->member_id)
+        //             ->where('allow', '>', 0)
+        //             ->decrement('allow');
+        //     }
+
+        // }
+
+
         $clientData = [
             'request_type' => 1,
             'reference_number' => strtotime('now'),
@@ -182,12 +208,13 @@ class DesktopClientRequestController extends Controller
             'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
             'dependent_dob' => $patientType == "dependent" ? $dob : null,
             'status' => 2,
-            'provider_email2' => $providerEmail2
+            'provider_email2' => $providerEmail2,
+            'remaining' => !$remaining ? null : $remaining->allow
         ];
 
         $client = Client::create($clientData);
 
-        $complaint = $this->CheckComplaint($request->complaint);
+        $complaint = $this->CheckComplaint($request->complaint, $client);
 
         $clientRequestData = [
             'client_id' => $client->id,
@@ -382,14 +409,31 @@ class DesktopClientRequestController extends Controller
 
     }
 
-    public function CheckComplaint($complaintArr){
+    public function CheckComplaint($complaintArr, $client){
         $complaint = [];
+        $isComplaintApproved = false;
 
         if (isset($complaintArr)) {
 
         foreach ($complaintArr as $key => $value) {
 
+
+
             $nValue = strtoupper($value['label']);
+
+            //$this->CheckComplaint($value['label']);
+
+            $check = Complaint::where('title', 'like', '%' . $nValue . '%')
+
+            ->get();
+
+            if (count($check) == 0) {
+
+            Complaint::create(['title' => $nValue]);
+
+            } else{
+                $isComplaintApproved = true;
+            }
 
             $complaint[] = $nValue;
 
@@ -398,7 +442,9 @@ class DesktopClientRequestController extends Controller
         $complaint = implode(', ', $complaint);
 
         }
-
+        $client->update([
+            'is_complaint_has_approved' => $isComplaintApproved
+        ]);
         return $complaint;
 
     }
@@ -433,5 +479,19 @@ class DesktopClientRequestController extends Controller
     }
 
 
+    public function searchComplaint(Request $request){
+
+        $complaint = $request->complaint;
+
+        $complaint_list = Complaint::where('title', 'like', "%$complaint%")
+                                    ->where('is_status', 1)
+                                    ->select(
+                                        DB::raw('id + 20 as value'),
+                                        'title as label'
+                                    )
+                                    ->get();
+
+        return $complaint_list;
+    }
 
 }
