@@ -259,10 +259,6 @@ class ClientRequestController extends Controller
 
         $provider_id = $request->provider_id;
 
-
-
-
-
         $findClientId = DB::connection('portal_request_db')
                         ->table('app_portal_clients as c')
                         ->leftJoin('app_portal_requests as r', 'r.client_id', '=', 'c.id')

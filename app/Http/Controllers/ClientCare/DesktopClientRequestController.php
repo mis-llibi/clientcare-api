@@ -16,6 +16,8 @@ use App\Services\SendingEmail;
 use App\Models\ClientCare\Complaint;
 use App\Models\ClientCare\RemainingTbl;
 use App\Models\ClientCare\RemainingTblLogs;
+use App\Models\ClientCare\CompanyComplaintExcluded;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -148,6 +150,10 @@ class DesktopClientRequestController extends Controller
             ], 404);
         }
 
+
+
+
+
         if(isset($request->provider) && $request->provider != 'undefined'){
             $provider = explode('--', $request->provider);
 
@@ -155,12 +161,28 @@ class DesktopClientRequestController extends Controller
             $provider_id = $hospital[0];
             $provider_name = $hospital[1];
 
+            $provider_exclusion = explode('++', $provider_name);
+            $provider_name_exclusion = $provider_exclusion[0];
+
             $doctor = explode('||', $provider[1]);
             $doctor_id = $doctor[0];
             $doctor_name = $doctor[1];
 
             $loa_status = "Pending Approval";
 
+
+            // Find Hospcode in sync
+            $hospcode = Hospital::where('id', $provider_id)->first();
+            // Check hospital exclusion
+            $hospitalExclusion = CompanyComplaintExcluded::where('compcode', $findPatient->company_code)
+                                                        ->where('hospcode', $hospcode->hosp_code)
+                                                        ->exists();
+
+            if($hospitalExclusion){
+                return response()->json([
+                    'message' => "$provider_name_exclusion is excluded from your policy"
+                ], 404);
+            }
 
 
         }else{
@@ -172,6 +194,9 @@ class DesktopClientRequestController extends Controller
         }
 
         $remaining = RemainingTbl::where('uniquecode', $findPatient->member_id)->first();
+
+        // Check if the complaint is excluded in company
+        $exclusionComplaintChecker = $this->ExclusionComplaintCompany($findPatient->company_code, $request->complaint);
 
         // if (!$remaining) {
 
@@ -225,7 +250,8 @@ class DesktopClientRequestController extends Controller
             'doctor_name' => $doctor_name,
             'loa_type' => $loaType,
             'complaint' => $complaint,
-            'loa_status' => $loa_status
+            'loa_status' => $loa_status,
+            'is_excluded' => $exclusionComplaintChecker
         ];
 
         $callback = [
@@ -423,7 +449,7 @@ class DesktopClientRequestController extends Controller
 
             //$this->CheckComplaint($value['label']);
 
-            $check = Complaint::where('title', 'like', '%' . $nValue . '%')
+            $check = Complaint::where('title', 'like', $nValue)
 
             ->get();
 
@@ -492,6 +518,31 @@ class DesktopClientRequestController extends Controller
                                     ->get();
 
         return $complaint_list;
+    }
+
+    public function ExclusionComplaintCompany($compcode, $complaints){
+
+
+        $isExcluded = false;
+
+        if(isset($complaints)){
+            foreach($complaints as $complaint){
+
+                $label = strtoupper($complaint['label']);
+                $labelWords = explode(' ', strtoupper($label));
+
+                $findExclusion = CompanyComplaintExcluded::where('compcode', $compcode)
+                                                        ->whereIn('complaint', $labelWords)
+                                                        ->first();
+
+                if($findExclusion){
+                    $isExcluded = true;
+
+                    return $isExcluded;
+                }
+            }
+            return $isExcluded;
+        }
     }
 
 }

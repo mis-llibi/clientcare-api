@@ -21,6 +21,6 @@ class ClientRequest extends Model
         'loa_type',
         'complaint',
         'loa_status',
-        ''
+        'is_excluded'
     ];
 }
