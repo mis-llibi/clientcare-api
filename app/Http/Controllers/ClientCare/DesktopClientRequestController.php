@@ -171,18 +171,24 @@ class DesktopClientRequestController extends Controller
             $loa_status = "Pending Approval";
 
 
-            // // Find Hospcode in sync
-            // $hospcode = Hospital::where('id', $provider_id)->first();
-            // // Check hospital exclusion
-            // $hospitalExclusion = CompanyComplaintExcluded::where('compcode', $findPatient->company_code)
-            //                                             ->where('hospcode', $hospcode->hosp_code)
-            //                                             ->exists();
+            // Find Hospcode in sync
+            $hospcode = Hospital::where('id', $provider_id)->first();
+            // Check hospital exclusion
+            if (is_null($hospcode->hosp_code)) {
+                $hospitalExclusion = false;
+            } else {
+                $hospitalExclusion = CompanyComplaintExcluded::where('compcode', $findPatient->company_code)
+                                    ->where('hospcode', $hospcode->hosp_code)
+                                    ->exists();
+            }
 
-            // if($hospitalExclusion){
-            //     return response()->json([
-            //         'message' => "$provider_name_exclusion is excluded from your policy"
-            //     ], 404);
-            // }
+            // It supposed to be not null
+
+            if($hospitalExclusion){
+                return response()->json([
+                    'message' => "$provider_name_exclusion is excluded from your policy"
+                ], 404);
+            }
 
 
         }else{

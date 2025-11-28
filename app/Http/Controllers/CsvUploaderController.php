@@ -12,7 +12,6 @@ class CsvUploaderController extends Controller
 
     public function import(Request $request){
 
-        return $request;
         $request->validate([
         'file' => 'required|file|mimes:csv,txt',
         ]);

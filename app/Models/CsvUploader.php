@@ -9,6 +9,7 @@ class CsvUploader extends Model
     //
 
     protected $table = 'csv_uploaders';
+    protected $connection = "portal_request_db";
 
 
     protected $fillable = [
