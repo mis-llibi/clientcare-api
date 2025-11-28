@@ -196,7 +196,7 @@ class DesktopClientRequestController extends Controller
         $remaining = RemainingTbl::where('uniquecode', $findPatient->member_id)->first();
 
         // Check if the complaint is excluded in company
-        $exclusionComplaintChecker = $this->ExclusionComplaintCompany($findPatient->company_code, $request->complaint);
+        // $exclusionComplaintChecker = $this->ExclusionComplaintCompany($findPatient->company_code, $request->complaint);
 
         // if (!$remaining) {
 
@@ -251,7 +251,7 @@ class DesktopClientRequestController extends Controller
             'loa_type' => $loaType,
             'complaint' => $complaint,
             'loa_status' => $loa_status,
-            'is_excluded' => $exclusionComplaintChecker
+            'is_excluded' => 0
         ];
 
         $callback = [
