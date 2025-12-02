@@ -20,6 +20,8 @@ use App\Services\SendingEmail;
 use App\Models\ClientCare\RemainingTbl;
 use App\Models\ClientCare\RemainingTblLogs;
 
+use Illuminate\Support\Carbon;
+
 // Controller
 use App\Http\Controllers\ClientCare\DesktopClientRequestController;
 
@@ -77,6 +79,8 @@ class ClientRequestController extends Controller
         $employeeLastName = $validated['employeeLastName'] ?? null;
         $loa_type = $validated['loa_type'];
 
+        $now = Carbon::now();
+
 
         if($verificationDetailsType == "insurance"){
             $findPatient = Masterlist::where('member_id', strtoupper($erCardNumber))
@@ -89,7 +93,11 @@ class ClientRequestController extends Controller
                                     ->first();
         }
 
-
+        if($now->greaterThan($findPatient->incepto)){
+            return response()->json([
+                'message' => "Your policy has already expired"
+            ], 404);
+        }
 
         // Validate if we find the patient
         if(!$findPatient){

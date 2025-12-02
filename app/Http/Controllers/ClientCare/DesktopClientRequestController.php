@@ -20,6 +20,7 @@ use App\Models\ClientCare\CompanyComplaintExcluded;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 
 class DesktopClientRequestController extends Controller
 {
@@ -119,6 +120,8 @@ class DesktopClientRequestController extends Controller
         $patientFirstName = $request->patientFirstName;
         $patientLastName = $request->patientLastName;
 
+        $now = Carbon::now();
+
         if($verificationDetailsType === 'insurance'){
             $findPatient = Masterlist::where('member_id', strtoupper($erCardNumber))
                                         ->where('birth_date', $dob)
@@ -129,6 +132,15 @@ class DesktopClientRequestController extends Controller
                                     ->where('birth_date', $dob)
                                     ->first();
         }
+
+        if($now->greaterThan($findPatient->incepto)){
+            return response()->json([
+                'message' => "Expired Policy"
+            ], 404);
+        }
+
+
+
 
         // Validate if we find the patient
         if(!$findPatient){
@@ -313,6 +325,8 @@ class DesktopClientRequestController extends Controller
         $patientFirstName = $request->patientFirstName;
         $patientLastName = $request->patientLastName;
 
+        $now = Carbon::now();
+
        if($verificationDetailsType === 'insurance'){
             $findPatient = Masterlist::where('member_id', strtoupper($erCardNumber))
                                         ->where('birth_date', $dob)
@@ -322,6 +336,12 @@ class DesktopClientRequestController extends Controller
                                     ->where('first_name', strtoupper($patientFirstName))
                                     ->where('birth_date', $dob)
                                     ->first();
+        }
+
+        if($now->greaterThan($findPatient->incepto)){
+            return response()->json([
+                'message' => "Your policy has already expired"
+            ], 404);
         }
 
         // Validate if we find the patient
