@@ -95,7 +95,7 @@ class ClientRequestController extends Controller
 
         if($now->greaterThan($findPatient->incepto)){
             return response()->json([
-                'message' => "Your policy has already expired"
+                'message' => "Your policy has already expired "
             ], 404);
         }
 
