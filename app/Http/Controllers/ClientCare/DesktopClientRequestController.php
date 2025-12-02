@@ -135,7 +135,7 @@ class DesktopClientRequestController extends Controller
 
         if($now->greaterThan($findPatient->incepto)){
             return response()->json([
-                'message' => "Expired Policy"
+                'message' => "Your policy has already expired"
             ], 404);
         }
 
