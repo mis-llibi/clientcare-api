@@ -300,6 +300,7 @@ class DesktopClientRequestController extends Controller
 
             // If all of the requirements are valid, check if the company is auto generate LOA
             if(!empty($company)){
+                Log::info($company);
                 if($company->isAuto == 1){
                     $hospital_name = explode('++', $provider_name);
                     $hospital_name = $hospital_name[0];
