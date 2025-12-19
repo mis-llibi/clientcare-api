@@ -143,6 +143,26 @@ return [
             ]) : [],
         ],
 
+        'ebd_current' => [
+            'driver' => 'mysql',
+            'url' => env('DB_URL'),
+            'host' => env('EBD_CURRENT_DB_HOST', '127.0.0.1'),
+            'port' => env('EBD_CURRENT_DB_PORT', '3306'),
+            'database' => env('EBD_CURRENT_DB_DATABASE', 'laravel'),
+            'username' => env('EBD_CURRENT_DB_USERNAME', 'root'),
+            'password' => env('EBD_CURRENT_DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DB_URL'),

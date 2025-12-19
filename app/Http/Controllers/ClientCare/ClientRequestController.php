@@ -19,11 +19,20 @@ use App\Models\ClientCare\Attachment;
 use App\Services\SendingEmail;
 use App\Models\ClientCare\RemainingTbl;
 use App\Models\ClientCare\RemainingTblLogs;
+use App\Models\ClientCare\CompanyComplaintExcluded;
+use App\Models\ClientCare\CompanyV2;
 
 use Illuminate\Support\Carbon;
 
 // Controller
 use App\Http\Controllers\ClientCare\DesktopClientRequestController;
+use App\Http\Controllers\Loa\GenerateLoaController;
+use App\Http\Controllers\NotificationController;
+use App\Models\ClientCare\AppLoaMonitor;
+use App\Models\ClientCare\Complaint;
+use App\Models\ClientCare\LoaInTransit;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ClientRequestController extends Controller
 {
@@ -93,12 +102,6 @@ class ClientRequestController extends Controller
                                     ->first();
         }
 
-        if($now->greaterThan($findPatient->incepto)){
-            return response()->json([
-                'message' => "Your policy has already expired "
-            ], 404);
-        }
-
         // Validate if we find the patient
         if(!$findPatient){
             return response()->json([
@@ -119,6 +122,12 @@ class ClientRequestController extends Controller
             ], 404);
         }
 
+        if($now->greaterThan($findPatient->incepto)){
+            return response()->json([
+                'message' => "Your policy has already expired "
+            ], 404);
+        }
+
         // Find provider details in Hospital DB
         $provider = Hospital::where('id', $provider_id)
                             ->where('status', 1)
@@ -129,8 +138,31 @@ class ClientRequestController extends Controller
                                     'city',
                                     'state',
                                     'email1',
+                                    'hosp_code'
                                     )
                             ->first();
+
+        // Check hospital exclusion
+        if(!empty($provider)){
+            if (is_null($provider->hosp_code)) {
+                $hospitalExclusion = false;
+            } else {
+                $hospitalExclusion = CompanyComplaintExcluded::where('compcode', $findPatient->company_code)
+                                    ->where('hospcode', $provider->hosp_code)
+                                    ->exists();
+            }
+        }else{
+            return response()->json([
+                'message' => "Provider is inactive"
+            ], 404);
+        }
+
+        // It supposed to be not null
+        if($hospitalExclusion){
+            return response()->json([
+                'message' => "$provider->name is excluded from your policy"
+            ], 404);
+        }
 
         $client = [
             'request_type' => 1,
@@ -186,7 +218,7 @@ class ClientRequestController extends Controller
         $refno = $request->refno;
         $loa_type = $request->loa_type;
 
-        $doneUpdate = [2,3,4];
+        $doneUpdate = [2,3,4,11];
 
         // Check if the refno and provider id exists
 
@@ -257,7 +289,6 @@ class ClientRequestController extends Controller
 
     public function submitUpdateRequestConsultation(Request $request){
 
-        $complaints = $request->complaint;
         $refno = $request->refno;
         $doctor_id = (int) $request->doctor;
         $doctor_name = "";
@@ -266,6 +297,10 @@ class ClientRequestController extends Controller
         $contact = $request->contact;
 
         $provider_id = $request->provider_id;
+
+
+
+
 
         $findClientId = DB::connection('portal_request_db')
                         ->table('app_portal_clients as c')
@@ -278,16 +313,30 @@ class ClientRequestController extends Controller
                         ->first();
 
         $client = Client::where('id', $findClientId->id)->first();
-        $complaint = new DesktopClientRequestController();
-        $complaints = $complaint->CheckComplaint($complaints, $client);
+
+        // Find patient in masterlist to get the company_code
+        $findPatient = Masterlist::where('member_id', $client->member_id)->first();
+
+        $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
+
+        $loa_status = "Pending Approval";
+
+
+        // Check if the complaint is excluded in company
+        $desktopController = new DesktopClientRequestController();
+        $exclusionComplaintChecker = $desktopController->ExclusionComplaintCompany($findPatient->company_code, $request->complaint);
+
+
 
         // Find hospital in provider db
         $provider = ProviderPortal::where('provider_id', $provider_id)
                                     ->where('user_type', 'Hospital')
                                     ->first();
+
+        $doctor = Doctor::where('id', $doctor_id)->first();
+
         // Find doctor
         if($doctor_id != 0){
-            $doctor = Doctor::where('id', $doctor_id)->first();
             $doctor_name = $doctor->last . ", " . $doctor->first . "++" . $doctor->specialization;
         }else{
             $doctor_name = ", ++";
@@ -313,11 +362,196 @@ class ClientRequestController extends Controller
 
         }
 
+
+        // Check if remaining, exclusion and complaint requirements are satisfied
+        $inscode = $findPatient->empcode;
+        $compcode = $findPatient->company_code;
+        $policy = $company->policy ?? "2024-11-1";
+        $status = [1, 4];
+        $types = ['outpatient', 'laboratory', 'consultation'];
+        $fullname = "{$findPatient->last_name}, {$findPatient->first_name}";
+        $totalRemaining = 0;
+        $isComplaintHasApproved = false;
+        $complaints = "";
+
+        $loafiles = LoaInTransit::where('patient_name', 'like', "%$fullname%")
+                                    ->whereIn('status', $status)
+                                    ->where(function ($q) use ($types) {
+                                        foreach ($types as $type) {
+                                            $q->orWhere('type', 'like', "%$type%");
+                                        }
+                                    })
+                                    // This is supposed to be benefit_type->policy
+                                    ->where('date', '>=', $policy)
+                                    ->orderBy('id', 'desc')
+                                    ->get();
+
+
+        $claims = AppLoaMonitor::where('compcode', $compcode)
+                                ->where('inscode', $inscode)
+                                ->get();
+
+        if(count($claims) > count($loafiles)){
+            $totalRemaining = 0;
+        }else{
+            $totalLoaTransitClaims = count($loafiles) - count($claims);
+            $totalRemaining = !$remaining ? 0 - $totalLoaTransitClaims : $remaining->allow - $totalLoaTransitClaims;
+        }
+
+        if(isset($request->complaint)){
+            foreach($request->complaint as $complaint){
+                $complaints .= $complaint['label'] . " ";
+                $nValue = strtoupper($complaint['label']);
+                $check = Complaint::where('title', 'like', $nValue)
+                                    ->where('is_status', 1)
+                                    ->get();
+                if(!count($check) == 0){
+                    $isComplaintHasApproved = true;
+                }
+            }
+        }
+
+        if($totalRemaining >= 1 && $isComplaintHasApproved == 1 && $exclusionComplaintChecker == 0){
+            if(!empty($company)){
+                if($company->isAuto == 1){
+
+
+                    $hospital = $request->hospital;
+                    $doctname = $doctor->last . ", " . $doctor->first . " " . $doctor->middle;
+
+                    $loa_status = "Approved";
+                    $patientType = "employee";
+                    $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
+
+                    if($findPatient->relation !== "EMPLOYEE"){
+                        // Find employee if dependent
+                        $employee = Masterlist::where('empcode', $findPatient->empcode)
+                                            ->where('relation', "EMPLOYEE")
+                                            ->first();
+
+                        $employeeName = $employee->last_name . ", " . $employee->first_name;
+                        $patientType = "dependent";
+                    }else{
+                        $employeeName = $findPatient->last_name . ", " . $findPatient->first_name;
+                    }
+
+                    $generateLoa = new GenerateLoaController();
+
+                    $result = $generateLoa->LOAGenerate($company->corporate_compcode,
+                                                        $company->company_id_from_corporate,
+                                                        $employeeName,
+                                                        $patient_name,
+                                                        $patientType,
+                                                        $findPatient->company_name,
+                                                        $hospital,
+                                                        $doctname,
+                                                        $complaints
+                                                        );
+
+                    $loa_number = $result['document_number'];
+                    $attachment = $result['attachment'];
+                    $complaint = $desktopController->CheckComplaint($request->complaint, $client);
+
+                    $clientRequestData = [
+                        'complaint' => $complaint,
+                        'doctor_id' => $doctor_id,
+                        'doctor_name' => $doctor_name,
+                        'loa_status' => $loa_status,
+                        'is_excluded' => $exclusionComplaintChecker,
+                        'loa_number' => $loa_number,
+                        'loa_attachment' => env('DO_LLIBI_CDN_ENDPOINT') . '/loa/generated/' . $loa_number
+
+                    ];
+                    $clientRequest = ClientRequest::where('client_id', $findClientId->id)->first();
+                    $clientRequest->update($clientRequestData);
+
+                    $clientData = [
+                        'status' => 11,
+                        'alt_email' => $email,
+                        'contact' => $contact,
+                        'remaining' => !$remaining ? null : $remaining->allow
+                    ];
+                    $client->update($clientData);
+
+                    $hospital = Hospital::where('id', $provider_id)->first();
+                    $accept_eloa = $hospital->accept_eloa;
+
+                    if($accept_eloa){
+                        $statusRemarks = 'Your LOA request has been approved. Your LOA Number is ' . '<b>'. $loa_number . '</b>' . '. '. '<br /><br />' .'You may print a copy of your LOA and present it to the accredited provider upon availment or you may present your (1) ER card or (2) LOA number together with any valid government ID as this provider now accepts e-LOA';
+                    }else{
+                        $statusRemarks = 'Your LOA request has been approved. Your LOA Number is ' . '<b>'. $loa_number . '</b>' . '. '. '<br /><br />' .'Please print a copy of your LOA and present it to the accredited provider upon availment.';
+                    }
+
+
+                    $homepage = "https://admin.portal.llibi.app";
+
+                    $feedbackUrl = $homepage . '/feedback/?q=' . Str::random(64)
+                        . '&rid=' . $client->id
+                        . '&compcode=' . $findPatient->company_code
+                        . '&memid=' . $findPatient->member_id
+                        . '&reqstat=' . $client->status;
+
+                    $feedbackLink = '
+                    <div>
+                        We value your feedback: <a href="'.$feedbackUrl.'">Please click here</a>
+                    </div>
+                    <div>
+                        <a href="'.$feedbackUrl.'">
+                        <img src="https://llibi-storage.sgp1.cdn.digitaloceanspaces.com/Self-service/Images/ccportal_1.jpg" alt="Feedback Icon" width="300">
+                        </a>
+                    </div>
+                    <br /><br />';
+
+                    $body = array(
+                        'body' => view('send-request-loa', [
+                            'name' =>  $patientType == "employee" ? strtoupper($patient_name) : strtoupper($employeeName),
+                            'dependent' => $patientType == "employee" ? null : $patient_name,
+                            'statusRemarks' => $statusRemarks,
+                            'is_accept_eloa' => $accept_eloa,
+                            'ref' => $client->reference_number,
+                            'feedbackLink' => $feedbackLink,
+                        ]),
+                        'attachment' => $attachment
+                    );
+
+                    $sendEmail = (new NotificationController)->EncryptedPDFMailNotification($patient_name, $client->email, $body);
+                    if(isset($email)){
+                        (new NotificationController)->EncryptedPDFMailNotification($patient_name, $email, $body);
+                    }
+
+                    if($sendEmail){
+
+                        if($contact){
+                            $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name
+                                        : $client->first_name . ' ' . $client->last_name;
+                            $sms =
+                            "From Lacson & Lacson:\n\nHi $patientName,\n\nYour request have successfully approved.\n\nYour reference number is $client->reference_number";
+                            $this->SendSMS($contact, $sms);
+                        }
+
+
+                        return response()->json([
+                            'isAuto' => true
+                        ], 201);
+
+                    }else{
+                        return response()->json([
+                            'error' => "Error in generating LOA"
+                        ]);
+                    }
+
+
+                }
+            }
+        }
+
+        $complaint = $desktopController->CheckComplaint($request->complaint, $client);
+
         $clientRequestData = [
-            'complaint' => $complaints,
+            'complaint' => $complaint,
             'doctor_id' => $doctor_id,
             'doctor_name' => $doctor_name,
-            'loa_status' => "Pending Approval"
+            'loa_status' => $loa_status
         ];
         $clientRequest = ClientRequest::where('client_id', $findClientId->id)->first();
         $clientRequest->update($clientRequestData);
@@ -355,7 +589,9 @@ class ClientRequestController extends Controller
             $this->SendSMS($provider->notification_sms, $smsProvider);
         }
 
-        return response(201);
+        return response()->json([
+            'isAuto' => false
+        ], 201);
     }
 
     public function submitUpdateRequestLaboratory(Request $request){
