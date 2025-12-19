@@ -294,10 +294,6 @@ class DesktopClientRequestController extends Controller
                 }
             }
         }
-        Log::info($company);
-        Log::info($totalRemaining);
-        Log::info($isComplaintHasApproved);
-        Log::info($exclusionComplaintChecker);
         // Validate if the remaining, complaint excluded and complaint approved is valid
         if($totalRemaining >= 1 && $isComplaintHasApproved == 1 && $exclusionComplaintChecker == 0){
 
