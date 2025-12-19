@@ -294,13 +294,16 @@ class DesktopClientRequestController extends Controller
                 }
             }
         }
-
+        Log::info($company);
+        Log::info($totalRemaining);
+        Log::info($isComplaintHasApproved);
+        Log::info($exclusionComplaintChecker);
         // Validate if the remaining, complaint excluded and complaint approved is valid
         if($totalRemaining >= 1 && $isComplaintHasApproved == 1 && $exclusionComplaintChecker == 0){
 
             // If all of the requirements are valid, check if the company is auto generate LOA
             if(!empty($company)){
-                Log::info($company);
+
                 if($company->isAuto == 1){
                     $hospital_name = explode('++', $provider_name);
                     $hospital_name = $hospital_name[0];
