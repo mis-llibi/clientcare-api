@@ -417,7 +417,12 @@ class ClientRequestController extends Controller
 
 
                     $hospital = $request->hospital;
-                    $doctname = $doctor->last . ", " . $doctor->first . " " . $doctor->middle;
+
+                    if($doctor_id != 0){
+                        $doctname = $doctor->last . ", " . $doctor->first . "++" . $doctor->specialization;
+                    }else{
+                        $doctname = "";
+                    }
 
                     $loa_status = "Approved";
                     $patientType = "employee";
