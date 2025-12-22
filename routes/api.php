@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\ClientCare\ClientRequestController;
 use App\Http\Controllers\ClientCare\DesktopClientRequestController;
+use App\Http\Controllers\ClientCare\ErrorLogsController;
 use App\Http\Controllers\CsvUploaderController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
@@ -26,5 +27,8 @@ Route::get('/client-search-doctor', [DesktopClientRequestController::class, 'sea
 Route::post('/submit-request-consultation', [DesktopClientRequestController::class, 'submitRequestConsultation']);
 Route::post('/submit-request-laboratory', [DesktopClientRequestController::class, 'submitRequestLaboratory']);
 Route::get('/search-complaint', [DesktopClientRequestController::class, 'searchComplaint']);
+
+// Error logs
+Route::post('/error-logs', [ErrorLogsController::class, 'UpdateErrorLog']);
 
 Route::post('/csv/import', [CsvUploaderController::class, 'import']);

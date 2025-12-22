@@ -22,7 +22,7 @@ use App\Http\Controllers\NotificationController;
 use App\Models\ClientCare\AppLoaMonitor;
 use App\Models\ClientCare\CompanyV2;
 use App\Models\ClientCare\LoaInTransit;
-
+use App\Models\ClientCare\ClientErrorLogs;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
@@ -108,6 +108,8 @@ class DesktopClientRequestController extends Controller
 
     public function submitRequestConsultation(Request $request){
 
+        set_time_limit(600);
+
         // Optionals
         $alt_email = $request->alt_email;
         $contact = $request->contact;
@@ -143,8 +145,25 @@ class DesktopClientRequestController extends Controller
 
         // Validate if we find the patient
         if(!$findPatient){
+
+            $errorData = [
+                'dependent_dob' => $patientType == "dependent" ? $dob : null,
+                'dependent_first_name' => $patientType == "dependent" ? $patientFirstName : null,
+                'dependent_last_name' => $patientType == "dependent" ? $patientLastName : null,
+                'dependent_member_id' => $patientType == "dependent" ? $erCardNumber : null,
+                'dob' => $patientType == "employee" ? $dob : null,
+                'first_name' => $patientType == "employee" ? $patientFirstName : strtoupper($employeeFirstName),
+                'is_dependent' => $patientType == "dependent" ? 1 : null,
+                'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
+                'member_id' => $patientType == 'employee' ? $erCardNumber : null,
+                'request_type' => 1
+            ];
+
+            $error_data = ClientErrorLogs::create($errorData);
+
             return response()->json([
-                'message' => "Cannot find the patient"
+                'message' => "Cannot find the patient",
+                'error_data' => $error_data
             ], 404);
         }
 
@@ -549,16 +568,28 @@ class DesktopClientRequestController extends Controller
                                     ->first();
         }
 
-        if($now->greaterThan($findPatient->incepto)){
-            return response()->json([
-                'message' => "Your policy has already expired"
-            ], 404);
-        }
 
         // Validate if we find the patient
         if(!$findPatient){
+
+            $errorData = [
+                'dependent_dob' => $patientType == "dependent" ? $dob : null,
+                'dependent_first_name' => $patientType == "dependent" ? $patientFirstName : null,
+                'dependent_last_name' => $patientType == "dependent" ? $patientLastName : null,
+                'dependent_member_id' => $patientType == "dependent" ? $erCardNumber : null,
+                'dob' => $patientType == "employee" ? $dob : null,
+                'first_name' => $patientType == "employee" ? $patientFirstName : strtoupper($employeeFirstName),
+                'is_dependent' => $patientType == "dependent" ? 1 : null,
+                'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
+                'member_id' => $patientType == 'employee' ? $erCardNumber : null,
+                'request_type' => 1
+            ];
+
+            $error_data = ClientErrorLogs::create($errorData);
+
             return response()->json([
-                'message' => "Cannot find the patient"
+                'message' => "Cannot find the patient",
+                'error_data' => $error_data
             ], 404);
         }
 
@@ -574,6 +605,13 @@ class DesktopClientRequestController extends Controller
                 'message' => "Select the Patient is Employee"
             ], 404);
         }
+
+        if($now->greaterThan($findPatient->incepto)){
+            return response()->json([
+                'message' => "Your policy has already expired"
+            ], 404);
+        }
+
 
         if(isset($request->provider) && $request->provider != 'undefined'){
             $provider = explode('--', $request->provider);
