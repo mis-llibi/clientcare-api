@@ -393,7 +393,7 @@ class ClientRequestController extends Controller
         $fullname = "{$findPatient->last_name}, {$findPatient->first_name}";
         $totalRemaining = 0;
         $isComplaintHasApproved = false;
-        $complaints = "";
+        $complaints = [];
 
         $loafiles = LoaInTransit::where('patient_name', 'like', "%$fullname%")
                                     ->whereIn('status', $status)
@@ -421,8 +421,8 @@ class ClientRequestController extends Controller
 
         if(isset($request->complaint)){
             foreach($request->complaint as $complaint){
-                $complaints .= $complaint['label'] . " ";
                 $nValue = strtoupper($complaint['label']);
+                $complaints[] = $nValue;
                 $check = Complaint::where('title', 'like', $nValue)
                                     ->where('is_status', 1)
                                     ->get();
@@ -430,6 +430,7 @@ class ClientRequestController extends Controller
                     $isComplaintHasApproved = true;
                 }
             }
+            $complaints = implode(', ', $complaints);
         }
 
         if($totalRemaining >= 1 && $isComplaintHasApproved == 1 && $exclusionComplaintChecker == 0){

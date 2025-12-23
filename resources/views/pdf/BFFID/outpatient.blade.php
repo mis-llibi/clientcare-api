@@ -161,7 +161,7 @@
         </tr>
      	<tr>
         	<td></td>
-            <td style="font-size:8px;">ATENEO DE MANILA UNIVERSITY - MAIN GROUP</td>
+            <td style="font-size:8px;">BOUNTY FRESH FOOD, INC. - DEP.</td>
         </tr>
      	<tr>
         	<td></td>
