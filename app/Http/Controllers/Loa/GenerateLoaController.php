@@ -99,6 +99,7 @@ class GenerateLoaController extends Controller
                 'employee_name' => $patient_type == "employee" ? strtoupper($patient_name) : strtoupper($employee_name),
                 'patient_name' => $patient_name,
                 'hospital_name' => $hospital_name,
+                'doctor_name' => $doctor_name,
                 'date' => date('Y-m-d'),
                 'time' => date("H:i:s"),
                 'status' => 1
