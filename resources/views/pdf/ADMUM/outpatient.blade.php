@@ -228,7 +228,7 @@
                     <td style="text-align:center; padding-top:4px;">Print Doctor's Name/Signature</td>
                 </tr>
                 <tr>
-                    <td style="text-align:center; padding-top:30px;">
+                    <td style="text-align:center; padding-top:45px;">
                         TIN: <span style="display:inline-block; border-bottom:1px solid #000; width:150px;"></span>
                     </td>
                 </tr>

@@ -110,7 +110,7 @@
             Filinvest, Alabang, Muntinlupa City 1781 <br>
             0917-8055424 & 0917-8855424 (calls only)<br>
             0917-8255424 & 0917-8955424 (call and text)<br>
-            Tel No.: (632) 8844-5773 / Fax No.: (02) 8886-4478
+            Fax No.: (02) 8886-4478
         </div>
 
     </div>
@@ -121,8 +121,9 @@
     </div>
 
     <div class="container-p-body">
-    	<span>1. Copy of this LOA should be emailed by the doctor to medicalclaims@llibi.com or faxed to (02) 8886-4478 or sent to CREDIT & COLLECTION of the hospital to be submitted within 30 calendar days to Lacson & Lacson Insurance Brokers, Inc. for payment of consultation fee.</span><br />
-    	<span>2. If laboratory / diagnostic tests are required, doctor should return a copy to patient.</span>
+    	<span>1. Patient should present this copy to Credit and Collection for validation.</span><br />
+    	<span>2. Patient must present validated laboratory form to the laboratory section of the accredited hospital for prescribed procedures to be done.</span><br />
+        <span>3. Credit and Collection should forward all billings with copy of this laboratory form within 30 days to Lacson & Lacson for collection of payment.</span>
     </div>
 
     <div class="solid-line"></div>
@@ -161,7 +162,7 @@
         </tr>
      	<tr>
         	<td></td>
-            <td style="font-size:8px;">PETRON CORPORATION</td>
+            <td style="font-size:8px;">HEALTHWAY QUALIMED HOSPITALS</td>
         </tr>
      	<tr>
         	<td></td>
@@ -183,6 +184,14 @@
     </table>
 
     <p style="margin-left: 20px;">Prescribed laboratory & Diagnostics test(s)</p>
+	<table style=" width: 100%; ">
+		<tr>
+        	<td class="td-value underline" style="width: 100%;"></td>
+        </tr>
+
+    </table>
+
+    <p style="margin-left: 20px;">Approval Code</p>
 	<table style=" width: 100%; ">
 		<tr>
         	<td class="td-value underline" style="width: 100%;"></td>
@@ -228,7 +237,7 @@
                     <td style="text-align:center; padding-top:4px;">Print Doctor's Name/Signature</td>
                 </tr>
                 <tr>
-                    <td style="text-align:center; padding-top:45px;">
+                    <td style="text-align:center; padding-top:50px;">
                         TIN: <span style="display:inline-block; border-bottom:1px solid #000; width:150px;"></span>
                     </td>
                 </tr>

@@ -110,7 +110,7 @@
             Filinvest, Alabang, Muntinlupa City 1781 <br>
             0917-8055424 & 0917-8855424 (calls only)<br>
             0917-8255424 & 0917-8955424 (call and text)<br>
-            Tel No.: (632) 8844-5773 / Fax No.: (02) 8886-4478
+            Fax No.: (02) 8886-4478
         </div>
 
     </div>
@@ -161,7 +161,7 @@
         </tr>
      	<tr>
         	<td></td>
-            <td style="font-size:8px;">PETRON CORPORATION</td>
+            <td style="font-size:8px;">HEALTHWAY MEDICAL CLINIC, INC. (HMC, INC.)</td>
         </tr>
      	<tr>
         	<td></td>
@@ -228,7 +228,7 @@
                     <td style="text-align:center; padding-top:4px;">Print Doctor's Name/Signature</td>
                 </tr>
                 <tr>
-                    <td style="text-align:center; padding-top:45px;">
+                    <td style="text-align:center; padding-top:30px;">
                         TIN: <span style="display:inline-block; border-bottom:1px solid #000; width:150px;"></span>
                     </td>
                 </tr>
