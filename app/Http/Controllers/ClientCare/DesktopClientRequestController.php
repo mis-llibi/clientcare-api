@@ -706,10 +706,72 @@ class DesktopClientRequestController extends Controller
             'refno' => $client->reference_number
         ], 201);
 
+    }
 
+    public function validateReimbursement (Request $request){
+        $alt_email = $request->alt_email;
+        $contact = $request->contact;
 
+        $dob = $request->dob;
+        $email = $request->email;
+        $patientType = $request->patientType;
+        $employeeFirstName = $request->employeeFirstName;
+        $employeeLastName = $request->employeeLastName;
 
+        $erCardNumber = $request->erCardNumber;
+        $patientFirstName = $request->patientFirstName;
+        $patientLastName = $request->patientLastName;
 
+        $now = Carbon::now();
+
+        $findPatient = Masterlist::where('last_name', strtoupper($patientLastName))
+                        ->where('first_name', strtoupper($patientFirstName))
+                        ->where('birth_date', $dob)
+                        ->first();
+
+        if(!$findPatient){
+
+            $errorData = [
+                'dependent_dob' => $patientType == "dependent" ? $dob : null,
+                'dependent_first_name' => $patientType == "dependent" ? $patientFirstName : null,
+                'dependent_last_name' => $patientType == "dependent" ? $patientLastName : null,
+                'dependent_member_id' => $patientType == "dependent" ? $erCardNumber : null,
+                'dob' => $patientType == "employee" ? $dob : null,
+                'first_name' => $patientType == "employee" ? $patientFirstName : strtoupper($employeeFirstName),
+                'is_dependent' => $patientType == "dependent" ? 1 : null,
+                'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
+                'member_id' => $patientType == 'employee' ? $erCardNumber : null,
+                'request_type' => 1
+            ];
+
+            $error_data = ClientErrorLogs::create($errorData);
+
+            return response()->json([
+                'message' => "Cannot find the patient",
+                'error_data' => $error_data
+            ], 404);
+        }
+
+        // Validate if the patient is dependent but it doesn't select "Patient is Dependent"
+        if($findPatient->relation != "EMPLOYEE" && $patientType != "dependent"){
+            return response()->json([
+                'message' => "Select the Patient is Dependent"
+            ], 404);
+        }
+
+        if($findPatient->relation == "EMPLOYEE" && $patientType == "dependent"){
+            return response()->json([
+                'message' => "Select the Patient is Employee"
+            ], 404);
+        }
+
+        if($now->greaterThan($findPatient->incepto)){
+            return response()->json([
+                'message' => "Your policy has already expired"
+            ], 404);
+        }
+
+        return response()->json(['status'=>'Success','member_id' => $findPatient->member_id], 201);
     }
 
     public function CheckComplaint($complaintArr, $client){
