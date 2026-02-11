@@ -883,4 +883,28 @@ class DesktopClientRequestController extends Controller
         }
     }
 
+    public function submitFollowUpRequest(Request $request)
+    {
+        $client = Client::where('reference_number', $request->reference_number)->first();
+
+        if (!$client) {
+            return response()->json([
+                'message' => 'Member not found'
+            ], 404);
+        }
+
+        if (is_null($client->follow_up_request_quantity)) {
+            $client->follow_up_request_quantity = 1;
+        } else {
+            $client->follow_up_request_quantity += 1;
+        }
+
+        $client->save();
+
+        return response()->json([
+            'message' => 'Follow up request submitted successfully',
+            'follow_up_request_quantity' => $client->follow_up_request_quantity
+        ], 200);
+    }
+
 }
