@@ -32,7 +32,7 @@ class Client extends Model
         'status',
         'platform',
         'remaining',
-        'is_complaint_has_approved'
-
+        'is_complaint_has_approved',
+        'follow_up_request_quantity',
     ];
 }

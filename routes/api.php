@@ -28,6 +28,7 @@ Route::post('/submit-request-consultation', [DesktopClientRequestController::cla
 Route::post('/submit-request-laboratory', [DesktopClientRequestController::class, 'submitRequestLaboratory']);
 Route::get('/search-complaint', [DesktopClientRequestController::class, 'searchComplaint']);
 Route::post('/validate-reimbursement', [DesktopClientRequestController::class, 'validateReimbursement']);
+Route::post('/submit-followup-request', [DesktopClientRequestController::class, 'submitFollowUpRequest']);
 
 // Error logs
 Route::post('/error-logs', [ErrorLogsController::class, 'UpdateErrorLog']);
