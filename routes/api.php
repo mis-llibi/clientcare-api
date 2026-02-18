@@ -34,3 +34,11 @@ Route::post('/submit-followup-request', [DesktopClientRequestController::class, 
 Route::post('/error-logs', [ErrorLogsController::class, 'UpdateErrorLog']);
 
 Route::post('/csv/import', [CsvUploaderController::class, 'import']);
+
+// Email Preview Route
+
+Route::get('/preview', function () {
+        return view('send-follow-up-request-notification', [
+            'patientName' => 'John Doe',
+        ]);
+    });
