@@ -23,6 +23,7 @@ use App\Models\ClientCare\AppLoaMonitor;
 use App\Models\ClientCare\CompanyV2;
 use App\Models\ClientCare\LoaInTransit;
 use App\Models\ClientCare\ClientErrorLogs;
+use App\Models\ClientCare\ClientFollowUpRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
@@ -825,6 +826,22 @@ class DesktopClientRequestController extends Controller
         return true;
     }
 
+    private function SendFollowUpRequestEmail($email, $client)
+    {
+        $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name
+                    : $client->first_name . ' ' . $client->last_name;
+
+        $body = view('send-follow-up-request-notification', [
+            'patientName' => $patientName
+        ])->render();
+
+        $emailer = new SendingEmail(email: $email, body: $body, subject: 'Follow-up Request Notification');
+        $emailer->send();
+        return response()->json([
+            'message' => 'Email sent successfully'
+        ], 200);
+    }
+
     private function SendSMS($sms, $message){
         $ch = curl_init('http://192.159.66.221/goip/sendsms/');
 
@@ -893,6 +910,38 @@ class DesktopClientRequestController extends Controller
             ], 404);
         }
 
+        if ($client->status == 3) {
+            return response()->json([
+                'message' => 'Your request was already approved.',
+                'type' => 'thumbsup'
+            ], 200);
+        }
+
+        if ($client->status == 4) {
+            return response()->json([
+                'message' => 'Sorry, your request was disapproved. Kindly check your email.',
+                'type' => 'warning'
+            ], 200);
+        }
+
+        if ($client->status != 2) {
+            return response()->json([
+                'message' => 'You cannot submit a follow-up request for this transaction.',
+                'type' => 'warning'
+            ], 200);
+        }
+
+        $checkRestriction = ClientFollowUpRequest::where('member_id', $client->member_id)
+            ->where('reference_number', $client->reference_number)
+            ->where('created_at', '>=', Carbon::now()->subMinutes(5))
+            ->first();
+
+        if ($checkRestriction) {
+            return response()->json([
+                'message' => 'Please wait for 5 minutes before making another follow up.'
+            ], 429);
+        }
+
         if (is_null($client->follow_up_request_quantity)) {
             $client->follow_up_request_quantity = 1;
         } else {
@@ -900,6 +949,16 @@ class DesktopClientRequestController extends Controller
         }
 
         $client->save();
+
+        ClientFollowUpRequest::create([
+            'member_id' => $client->member_id,
+            'reference_number' => $client->reference_number,
+        ]);
+
+        if ($client->follow_up_request_quantity === 5) {
+            $email = "rosemerino@llibi.com";
+            $this->SendFollowUpRequestEmail($email, $client);
+        }
 
         return response()->json([
             'message' => 'Follow up request submitted successfully',
