@@ -161,7 +161,7 @@
         </tr>
      	<tr>
         	<td></td>
-            <td style="font-size:8px;">HEALTHWAY MEDICAL CLINIC, INC. (HMC, INC.)</td>
+            <td style="font-size:8px;">AIDEA INC.</td>
         </tr>
      	<tr>
         	<td></td>
