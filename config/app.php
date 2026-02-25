@@ -92,6 +92,8 @@ return [
 
     'DO_ENDPOINT' => env('DO_LLIBI_CDN_ENDPOINT'),
 
+    'HASHID_SECRET' => env('HASHIDS_SALT'),
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key

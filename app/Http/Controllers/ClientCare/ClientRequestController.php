@@ -32,30 +32,36 @@ use App\Models\ClientCare\AppLoaMonitor;
 use App\Models\ClientCare\ClientErrorLogs;
 use App\Models\ClientCare\Complaint;
 use App\Models\ClientCare\LoaInTransit;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Vinkla\Hashids\Facades\Hashids;
+
 
 class ClientRequestController extends Controller
 {
     //
 
-    public function getProviderId(Request $request){
-        $providerId = $request->id;
+    public function getProviderId(Request $request)
+    {
+        $decoded = Hashids::decode($request->id);
+
+        if (empty($decoded)) {
+            return response()->json(['success' => false], 422);
+        }
+
+        $providerId = $decoded[0];
 
         $findProvider = ProviderPortal::where('provider_id', $providerId)
-                                    ->where('user_type', 'Hospital')
-                                    ->first();
+            ->where('user_type', 'Hospital')
+            ->first();
 
-        if($findProvider){
-            return response()->json([
-                'provider' => $findProvider,
-                'success' => true
-            ], 200);
+        if (!$findProvider) {
+            return response()->json(['success' => false], 422);
         }
 
         return response()->json([
-            'success' => false
-        ], 422);
+            'provider' => $findProvider,
+            'success' => true
+        ]);
     }
 
     public function submitRequest(Request $request){
