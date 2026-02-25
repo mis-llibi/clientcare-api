@@ -709,8 +709,8 @@ class DesktopClientRequestController extends Controller
 
     }
 
-    public function validateReimbursement (Request $request){
-        $alt_email = $request->alt_email;
+    public function validateReimbursement(Request $request)
+    {
         $contact = $request->contact;
 
         $dob = $request->dob;
@@ -726,53 +726,137 @@ class DesktopClientRequestController extends Controller
         $now = Carbon::now();
 
         $findPatient = Masterlist::where('last_name', strtoupper($patientLastName))
-                        ->where('first_name', strtoupper($patientFirstName))
-                        ->where('birth_date', $dob)
-                        ->first();
+            ->where('first_name', strtoupper($patientFirstName))
+            ->where('birth_date', $dob)
+            ->first();
 
-        if(!$findPatient){
+        if (!$findPatient) {
+            $findPatientByERCard = Masterlist::where('member_id', $erCardNumber)
+                ->where('birth_date', $dob)
+                ->first();
 
-            $errorData = [
-                'dependent_dob' => $patientType == "dependent" ? $dob : null,
-                'dependent_first_name' => $patientType == "dependent" ? $patientFirstName : null,
-                'dependent_last_name' => $patientType == "dependent" ? $patientLastName : null,
-                'dependent_member_id' => $patientType == "dependent" ? $erCardNumber : null,
-                'dob' => $patientType == "employee" ? $dob : null,
-                'first_name' => $patientType == "employee" ? $patientFirstName : strtoupper($employeeFirstName),
-                'is_dependent' => $patientType == "dependent" ? 1 : null,
-                'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
-                'member_id' => $patientType == 'employee' ? $erCardNumber : null,
-                'request_type' => 1
-            ];
+            if (!$findPatientByERCard) {
 
-            $error_data = ClientErrorLogs::create($errorData);
+                $errorData = [
+                    'dependent_dob' => $patientType == "dependent" ? $dob : null,
+                    'dependent_first_name' => $patientType == "dependent" ? $patientFirstName : null,
+                    'dependent_last_name' => $patientType == "dependent" ? $patientLastName : null,
+                    'dependent_member_id' => $patientType == "dependent" ? $erCardNumber : null,
+                    'dob' => $patientType == "employee" ? $dob : null,
+                    'first_name' => $patientType == "employee" ? $patientFirstName : strtoupper($employeeFirstName),
+                    'is_dependent' => $patientType == "dependent" ? 1 : null,
+                    'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
+                    'member_id' => $patientType == 'employee' ? $erCardNumber : null,
+                    'request_type' => 1
+                ];
+
+                $error_data = ClientErrorLogs::create($errorData);
+
+                return response()->json([
+                    'message' => "Cannot find the patient",
+                    'error_data' => $error_data
+                ], 404);
+            }
+
+            // Get employee full name
+            if ($patientType == "employee" && $findPatientByERCard->relation == "EMPLOYEE") {
+                $employee_full_name = $findPatientByERCard->first_name . ' ' . $findPatientByERCard->last_name;
+                $patient_full_name = $findPatientByERCard->first_name . ' ' . $findPatientByERCard->last_name;
+            } else {
+                //Must get the employee full name
+                $dependent = Masterlist::where('empcode', $findPatientByERCard->empcode)
+                    ->where('relation', 'EMPLOYEE')
+                    ->first();
+
+                if (!$dependent) {
+                    return response()->json([
+                        'message' => "Cannot find the employee record for this dependent"
+                    ], 404);
+                }
+
+                $employee_full_name = $dependent->first_name . ' ' . $dependent->last_name;
+
+                $patient_full_name = $findPatientByERCard->first_name . ' ' . $findPatientByERCard->last_name;
+            }
+
+
+            // Validate if the patient is dependent but it doesn't select "Patient is Dependent"
+            if ($findPatientByERCard->relation != "EMPLOYEE" && $patientType != "dependent") {
+                return response()->json([
+                    'message' => "Select the Patient is Dependent"
+                ], 404);
+            }
+
+            if ($findPatientByERCard->relation == "EMPLOYEE" && $patientType == "dependent") {
+                return response()->json([
+                    'message' => "Select the Patient is Employee"
+                ], 404);
+            }
+
+            if ($now->greaterThan($findPatientByERCard->incepto)) {
+                return response()->json([
+                    'message' => "Your policy has already expired"
+                ], 404);
+            }
 
             return response()->json([
-                'message' => "Cannot find the patient",
-                'error_data' => $error_data
-            ], 404);
+                'status' => 'Success',
+                'member_id' => $findPatientByERCard->member_id,
+                'patient_full_name' => $patient_full_name,
+                'employee_full_name' => $employee_full_name,
+                'company_name' => $findPatientByERCard->company_name
+            ], 201);
         }
 
         // Validate if the patient is dependent but it doesn't select "Patient is Dependent"
-        if($findPatient->relation != "EMPLOYEE" && $patientType != "dependent"){
+        if ($findPatient->relation != "EMPLOYEE" && $patientType != "dependent") {
             return response()->json([
                 'message' => "Select the Patient is Dependent"
             ], 404);
         }
 
-        if($findPatient->relation == "EMPLOYEE" && $patientType == "dependent"){
+        if ($findPatient->relation == "EMPLOYEE" && $patientType == "dependent") {
             return response()->json([
                 'message' => "Select the Patient is Employee"
             ], 404);
         }
 
-        if($now->greaterThan($findPatient->incepto)){
+        if ($now->greaterThan($findPatient->incepto)) {
             return response()->json([
                 'message' => "Your policy has already expired"
             ], 404);
         }
 
-        return response()->json(['status'=>'Success','member_id' => $findPatient->member_id], 201);
+        // Get employee full name
+        if ($patientType == "employee") {
+            $employee_full_name = $findPatient->first_name . ' ' . $findPatient->last_name;
+            $patient_full_name = $findPatient->first_name . ' ' . $findPatient->last_name;
+        } else if ($patientType == "dependent") {
+            //Must get the employee full name
+            $dependent = Masterlist::where('empcode', $findPatient->empcode)
+                ->where('relation', 'EMPLOYEE')
+                ->first();
+
+            if (!$dependent) {
+                return response()->json([
+                    'message' => "Cannot find the employee record for this dependent"
+                ], 404);
+            }
+
+            $employee_full_name = $dependent->first_name . ' ' . $dependent->last_name;
+
+            $patient_full_name = $findPatient->first_name . ' ' . $findPatient->last_name;
+        }
+
+
+        return response()
+            ->json([
+                'status' => 'Success',
+                'member_id' => $findPatient->member_id,
+                'patient_full_name' => $patient_full_name,
+                'employee_full_name' => $employee_full_name,
+                'company_name' => $findPatient->company_name
+            ], 201);
     }
 
     public function CheckComplaint($complaintArr, $client){
