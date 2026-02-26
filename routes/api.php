@@ -94,6 +94,14 @@ Route::get('/encrypt-provider', function () {
         '192' => 'The Medical City Congressional Clinic',
         '908' => 'The Medical City Clinic SM San Lazaro',
         '614' => 'The Medical City Clinic SM San Mateo',
+        '234' => 'Healthdev Integrative Clinics Inc. Quezon City',
+        '1047' => '3 Star Medical Clinic and Diagnostic Center',
+        '96' => 'Chong Hua Hospital',
+        '306' => 'St. Lukes Medical Center - Global City',
+        '257' => 'Marikina Valley Medical Center',
+        '643' => 'Tooth Works General Dentistry and Orthodontics (FRC, PGRC & WECARE)',
+        '18' => 'Makati Medical Center',
+        '669' => 'Chong Hua Hospital Mandaue & Cancer Center',
     ];
 
     $hashedProviders = [];
