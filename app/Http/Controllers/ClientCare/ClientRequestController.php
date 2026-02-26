@@ -32,30 +32,36 @@ use App\Models\ClientCare\AppLoaMonitor;
 use App\Models\ClientCare\ClientErrorLogs;
 use App\Models\ClientCare\Complaint;
 use App\Models\ClientCare\LoaInTransit;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Vinkla\Hashids\Facades\Hashids;
+
 
 class ClientRequestController extends Controller
 {
     //
 
-    public function getProviderId(Request $request){
-        $providerId = $request->id;
+    public function getProviderId(Request $request)
+    {
+        $decoded = Hashids::decode($request->id);
+
+        if (empty($decoded)) {
+            return response()->json(['success' => false], 422);
+        }
+
+        $providerId = $decoded[0];
 
         $findProvider = ProviderPortal::where('provider_id', $providerId)
-                                    ->where('user_type', 'Hospital')
-                                    ->first();
+            ->where('user_type', 'Hospital')
+            ->first();
 
-        if($findProvider){
-            return response()->json([
-                'provider' => $findProvider,
-                'success' => true
-            ], 200);
+        if (!$findProvider) {
+            return response()->json(['success' => false], 422);
         }
 
         return response()->json([
-            'success' => false
-        ], 422);
+            'provider' => $findProvider,
+            'success' => true
+        ]);
     }
 
     public function submitRequest(Request $request){
@@ -72,7 +78,8 @@ class ClientRequestController extends Controller
             'verificationDetailsType' => ['required', 'string'],
             'employeeFirstName' => ['nullable', 'string'],
             'employeeLastName' => ['nullable', 'string'],
-            'loa_type' => ['required', 'string']
+            'loa_type' => ['required', 'string'],
+            'hashed_id' => ['required', 'string']
         ]);
 
 
@@ -88,6 +95,7 @@ class ClientRequestController extends Controller
         $employeeFirstName = $validated['employeeFirstName'] ?? null;
         $employeeLastName = $validated['employeeLastName'] ?? null;
         $loa_type = $validated['loa_type'];
+        $hashed_id = $validated['hashed_id'] ?? "";
 
         $now = Carbon::now();
 
@@ -222,7 +230,7 @@ class ClientRequestController extends Controller
         ClientRequest::create($clientRequest);
         Callback::create($callback);
 
-        $request_link = config('app.frontend') . '/provider/'. $provider_id . "/" . $loa_type . "/" . $client->reference_number;
+        $request_link = config('app.frontend') . '/provider/'. $hashed_id . "/" . $loa_type . "/" . $client->reference_number;
 
         return $request_link;
 
@@ -232,9 +240,11 @@ class ClientRequestController extends Controller
 
     public function updateClientRequest(Request $request){
 
-        $provider_id = $request->id;
+        $decoded_provider_id = Hashids::decode($request->id);
         $refno = $request->refno;
         $loa_type = $request->loa_type;
+
+        $provider_id = $decoded_provider_id[0];
 
         $doneUpdate = [2,3,4,11];
 
@@ -317,7 +327,10 @@ class ClientRequestController extends Controller
         $email = $request->email;
         $contact = $request->contact;
 
-        $provider_id = $request->provider_id;
+        $decoded_provider_id = Hashids::decode($request->provider_id);
+
+        $provider_id = $decoded_provider_id[0];
+
 
 
 
@@ -629,13 +642,15 @@ class ClientRequestController extends Controller
             'files.*' => ['file', 'mimes:pdf,jpg,png'], // ✅ each item must be a file,
             'refno' => ['integer'],
             'hospital' => ['string'],
-            'provider_id' => ['integer']
+            'provider_id' => ['string']
         ]);
 
         $refno = $request->refno;
         $contact = $request->contact;
         $email = $request->email;
-        $provider_id = $request->provider_id;
+        $decoded_provider_id = Hashids::decode($request->provider_id);
+
+        $provider_id = $decoded_provider_id[0];
 
 
         $findClientId = DB::connection('portal_request_db')

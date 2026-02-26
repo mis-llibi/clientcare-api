@@ -161,7 +161,7 @@
         </tr>
      	<tr>
         	<td></td>
-            <td style="font-size:8px;">AIDEA INC.</td>
+            <td style="font-size:8px;">CAZNEAU INC.</td>
         </tr>
      	<tr>
         	<td></td>
