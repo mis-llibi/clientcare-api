@@ -95,7 +95,7 @@ Route::get('/encrypt-provider', function () {
         '908' => 'The Medical City Clinic SM San Lazaro',
         '614' => 'The Medical City Clinic SM San Mateo',
         '234' => 'Healthdev Integrative Clinics Inc. Quezon City',
-        '1047' => '3 Star Medical Clinic and Diagnostic Center',
+        '1407' => '3 Star Medical Clinic and Diagnostic Center',
         '96' => 'Chong Hua Hospital',
         '306' => 'St. Lukes Medical Center - Global City',
         '257' => 'Marikina Valley Medical Center',
