@@ -114,6 +114,8 @@ class DesktopClientRequestController extends Controller
         // Optionals
         $alt_email = $request->alt_email;
         $contact = $request->contact;
+        //Note
+        $provider_remarks = $request->provider_remarks;
 
         $dob = $request->dob;
         $email = $request->email;
@@ -157,6 +159,7 @@ class DesktopClientRequestController extends Controller
                 'is_dependent' => $patientType == "dependent" ? 1 : null,
                 'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
                 'member_id' => $patientType == 'employee' ? $erCardNumber : null,
+                'provider_remarks' => $provider_remarks,
                 'request_type' => 1
             ];
 
@@ -372,6 +375,7 @@ class DesktopClientRequestController extends Controller
                         'dependent_first_name' => $patientType == "dependent" ? $findPatient->first_name : null,
                         'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
                         'dependent_dob' => $patientType == "dependent" ? $dob : null,
+                        'provider_remarks' => $provider_remarks,
                         'status' => 11,
                         'provider_email2' => $providerEmail2,
                         'remaining' => !$remaining ? null : $remaining->allow
@@ -495,6 +499,7 @@ class DesktopClientRequestController extends Controller
             'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
             'dependent_dob' => $patientType == "dependent" ? $dob : null,
             'status' => 2,
+            'provider_remarks' => $provider_remarks,
             'provider_email2' => $providerEmail2,
             'remaining' => !$remaining ? null : $remaining->allow
         ];
