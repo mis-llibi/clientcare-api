@@ -29,6 +29,7 @@ class Client extends Model
         'dependent_last_name',
         'dependent_dob',
         'remarks',
+        'provider_remarks',
         'status',
         'platform',
         'remaining',

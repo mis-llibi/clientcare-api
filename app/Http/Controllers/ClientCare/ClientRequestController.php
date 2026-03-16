@@ -326,6 +326,7 @@ class ClientRequestController extends Controller
 
         $email = $request->email;
         $contact = $request->contact;
+        $provider_remarks = $request->provider_remarks;
 
         $decoded_provider_id = Hashids::decode($request->provider_id);
 
@@ -509,7 +510,8 @@ class ClientRequestController extends Controller
                         'status' => 11,
                         'alt_email' => $email,
                         'contact' => $contact,
-                        'remaining' => !$remaining ? null : $remaining->allow
+                        'remaining' => !$remaining ? null : $remaining->allow,
+                        'provider_remarks' => $provider_remarks ?? null
                     ];
                     $client->update($clientData);
 
@@ -601,7 +603,9 @@ class ClientRequestController extends Controller
             'status' => 2,
             'alt_email' => $email,
             'contact' => $contact,
-            'remaining' => !$remaining ? null : $remaining->allow
+            'remaining' => !$remaining ? null : $remaining->allow,
+            'provider_remarks' => $provider_remarks ?? null
+
         ];
         $client->update($clientData);
 
