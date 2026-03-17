@@ -132,6 +132,15 @@ class DesktopClientRequestController extends Controller
         $patientLastName = $request->patientLastName;
 
         $now = Carbon::now();
+        
+        $isWeekday = $now->isWeekday() ? 1 : 0;
+
+        if ($isWeekday === 0) {
+            return response()->json([
+                'message' => "Please refer to your HR"
+            ], 404);
+        }
+
         $ref_no = strtotime("now");
 
         if($verificationDetailsType === 'insurance'){
@@ -572,6 +581,13 @@ class DesktopClientRequestController extends Controller
         $patientLastName = $request->patientLastName;
 
         $now = Carbon::now();
+
+        $isWeekday = $now->isWeekday() ? 1 : 0;
+        if ($isWeekday === 0) {
+            return response()->json([
+                'message' => "Please refer to your HR"
+            ], 404);
+        }
 
        if($verificationDetailsType === 'insurance'){
             $findPatient = Masterlist::where('member_id', strtoupper($erCardNumber))
