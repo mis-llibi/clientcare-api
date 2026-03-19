@@ -30,7 +30,7 @@ class GenerateLoaController extends Controller
 
 
 
-        $folderCompcode = $corporate_compcode == "LLIBI" ? "ADMUM" : $corporate_compcode;
+        $folderCompcode = $corporate_compcode;
 
         // Assign Document Number
         $document_number = $corporate_compcode . '-' . date("Y", time()) . '-a-';
