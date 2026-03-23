@@ -14,10 +14,10 @@ class MemberValidationController extends Controller
 {
     //
 
-    public function validateMember($member_id, $birth_date){
+    public function validateMember(Request $request){
 
-        $member_id = strtoupper($member_id);
-        $birth_date = $birth_date;
+        $member_id = strtoupper($request->member_id);
+        $birth_date = $request->birth_date;
         $now = now()->format('Y-m-d');
 
         $result = Masterlist::where('member_id', $member_id)
