@@ -138,7 +138,7 @@ Route::post('/error-logs', [ErrorLogsController::class, 'UpdateErrorLog']);
 Route::post('/csv/import', [CsvUploaderController::class, 'import']);
 
 // Hati API
-Route::get("/member-validation", [MemberValidationController::class, 'validateMember']);
+Route::get("/member-validation", [MemberValidationController::class, 'validateMember'])->middleware('hati_api_key');
 
 // Email Preview Route
 // Route::get('/preview', function () {
