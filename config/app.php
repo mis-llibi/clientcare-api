@@ -94,6 +94,8 @@ return [
 
     'HASHID_SECRET' => env('HASHIDS_SALT'),
 
+    'hati-api-key' => env('HATI_API_KEY'),
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key

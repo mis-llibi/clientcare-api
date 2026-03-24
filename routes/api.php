@@ -8,6 +8,7 @@ use App\Http\Controllers\ClientCare\ClientRequestController;
 use App\Http\Controllers\ClientCare\DesktopClientRequestController;
 use App\Http\Controllers\ClientCare\ErrorLogsController;
 use App\Http\Controllers\CsvUploaderController;
+use App\Http\Controllers\Hati\MemberValidationController;
 use Vinkla\Hashids\Facades\Hashids;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
@@ -135,6 +136,9 @@ Route::post('/submit-followup-request', [DesktopClientRequestController::class, 
 Route::post('/error-logs', [ErrorLogsController::class, 'UpdateErrorLog']);
 
 Route::post('/csv/import', [CsvUploaderController::class, 'import']);
+
+// Hati API
+Route::get("/member-validation", [MemberValidationController::class, 'validateMember'])->middleware('hati_api_key');
 
 // Email Preview Route
 // Route::get('/preview', function () {

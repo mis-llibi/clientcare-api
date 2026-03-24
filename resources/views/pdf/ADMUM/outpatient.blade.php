@@ -161,7 +161,7 @@
         </tr>
      	<tr>
         	<td></td>
-            <td style="font-size:8px;">ATENEO DE MANILA UNIVERSITY - MAIN GROUP</td>
+            <td style="font-size:8px;">{{ $company_name }}</td>
         </tr>
      	<tr>
         	<td></td>
