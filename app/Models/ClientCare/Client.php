@@ -35,5 +35,6 @@ class Client extends Model
         'remaining',
         'is_complaint_has_approved',
         'follow_up_request_quantity',
+        'user_id',
     ];
 }

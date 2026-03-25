@@ -9,6 +9,7 @@ use App\Http\Controllers\ClientCare\DesktopClientRequestController;
 use App\Http\Controllers\ClientCare\ErrorLogsController;
 use App\Http\Controllers\CsvUploaderController;
 use App\Http\Controllers\Hati\MemberValidationController;
+use App\Http\Controllers\Hr\HrController;
 use Vinkla\Hashids\Facades\Hashids;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
@@ -139,6 +140,10 @@ Route::post('/csv/import', [CsvUploaderController::class, 'import']);
 
 // Hati API
 Route::get("/member-validation", [MemberValidationController::class, 'validateMember'])->middleware('hati_api_key');
+
+// HR Api
+Route::get('/hr-companies', [HrController::class, 'index']);
+Route::post('/submit-hr-patient', [HrController::class, 'submitForms']);
 
 // Email Preview Route
 // Route::get('/preview', function () {

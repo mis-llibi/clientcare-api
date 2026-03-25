@@ -23,6 +23,7 @@ class ClientRequest extends Model
         'loa_status',
         'is_excluded',
         'loa_number',
-        'loa_attachment'
+        'loa_attachment',
+        'is_hr'
     ];
 }
