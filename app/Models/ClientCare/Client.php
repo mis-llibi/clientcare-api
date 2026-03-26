@@ -11,6 +11,10 @@ class Client extends Model
     protected $connection = 'portal_request_db';
     protected $table = 'app_portal_clients';
 
+    public function clientRequest()
+    {
+        return $this->hasOne(ClientRequest::class, 'client_id');
+    }
 
     protected $fillable = [
         'request_type',

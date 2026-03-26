@@ -16,10 +16,11 @@ return [
     */
 
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:3000,127.0.0.1:8000,::1',
+        '%s%s%s%s',
+        'localhost,localhost:3000,localhost:3001,127.0.0.1,127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:8000,::1',
         Sanctum::currentApplicationUrlWithPort(),
-        env('FRONTEND_URL') ? ','.parse_url(env('FRONTEND_URL'), PHP_URL_HOST) : ''
+        env('FRONTEND_URL') ? ','.parse_url(env('FRONTEND_URL'), PHP_URL_HOST) : '',
+        env('FRONTEND_URL_V2') ? ','.parse_url(env('FRONTEND_URL_V2'), PHP_URL_HOST).(!empty(parse_url(env('FRONTEND_URL_V2'), PHP_URL_PORT)) ? ':'.parse_url(env('FRONTEND_URL_V2'), PHP_URL_PORT) : '') : ''
     ))),
 
     /*
@@ -34,7 +35,7 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    'guard' => ['web', 'hr_users'],
 
     /*
     |--------------------------------------------------------------------------

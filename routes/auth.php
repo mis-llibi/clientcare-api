@@ -35,3 +35,21 @@ Route::post('/email/verification-notification', [EmailVerificationNotificationCo
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
+
+// HR Auth Routes
+use App\Http\Controllers\Auth\HrAuthController;
+
+Route::post('/hr/register', [HrAuthController::class, 'register'])
+    ->middleware('guest:hr_users')
+    ->name('hr.register');
+
+Route::post('/hr/login', [HrAuthController::class, 'login'])
+    ->middleware('guest:hr_users')
+    ->name('hr.login');
+
+Route::post('/hr/logout', [HrAuthController::class, 'logout'])
+    ->middleware('auth:hr_users')
+    ->name('hr.logout');
+
+Route::get('/hr/user', [HrAuthController::class, 'user'])
+    ->name('hr.user');
