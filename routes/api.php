@@ -142,11 +142,8 @@ Route::post('/csv/import', [CsvUploaderController::class, 'import']);
 
 Route::middleware(['auth:hr_users'])->group(function () {
     Route::get('/hr-search-request/{search}/{id}', [HrController::class, 'SearchRequest']);
-    Route::post('/hr-update-request', [HrController::class, 'UpdateRequest']);
     Route::post('/hr-update-request-approval', [HrController::class, 'UpdateRequestApproval']);
     Route::get('/hr-get-companies', [HrController::class, 'GetCompanies']);
-    Route::post('/hr/export', [HrController::class, 'export']);
-    Route::post('/hr/preview-export-records', [HrController::class, 'previewExport']);
     Route::post('/hr/view-by', [HrController::class, 'viewBy']);
     Route::get('/hr/view-logs', [HrController::class, 'viewLogs']);
     Route::get('/hr/pending-counter', [HrController::class, 'pendingCounter']);

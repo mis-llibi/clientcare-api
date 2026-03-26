@@ -54,6 +54,11 @@ class HrController extends Controller
         $company_id = $request->company_id;
         $user_id = $request->user_id;
 
+        $email = $request->email;
+        $alt_email = $request->alt_email;
+
+        // $company = CompanyV2::where('id', $company_id)->first();
+
 
 
         $clientData = [
@@ -66,7 +71,9 @@ class HrController extends Controller
             'dependent_last_name' => $patient_type != "employee" ? $patient_lastname : null,
             'status' => 12,
             'user_id' => $user_id,
-            'platform' => "hr"
+            'platform' => "hr",
+            'email' => $email,
+            'alt_email' => $alt_email
 
         ];
 
@@ -93,8 +100,26 @@ class HrController extends Controller
             'provider' => $providerCol,
             'complaint' => $chief_complaint,
             'loa_status' => "Pending Approval",
-            'is_hr' => 1
         ];
+
+        if($email){
+
+            $patient_name = $patient_firstname . " " . $patient_lastname;
+            $body = array(
+                'body' => view('send-hr-approve'),
+            );
+
+            (new NotificationController)->EncryptedPDFMailNotification($patient_name, $email, $body);
+        }
+
+        if($alt_email){
+            $patient_name = $patient_firstname . " " . $patient_lastname;
+            $body = array(
+                'body' => view('send-hr-approve'),
+            );
+
+            (new NotificationController)->EncryptedPDFMailNotification($patient_name, $alt_email, $body);
+        }
 
 
 
@@ -167,7 +192,6 @@ class HrController extends Controller
                 't2.provider_procedure_type as procedure_type',
                 't2.is_excluded as is_excluded',
                 't1.approved_date',
-                't1.elapse_approved_time',
                 DB::raw('TIMESTAMPDIFF(MINUTE, t1.created_at, t1.approved_date) as elapse_minutes'),
                 DB::raw('TIMESTAMPDIFF(HOUR, t1.created_at, t1.approved_date) as elapse_hours'),
                 'mlist.company_name',
@@ -309,10 +333,6 @@ class HrController extends Controller
         }
 
         if ((int)$request->status == 13) {
-            $title = strtoupper($request->loaNumber);
-            $this->validate($request, [
-                'attachLOA' => 'required|mimes:pdf',
-            ]);
 
             $directory = 'Self-service/LOA/' . $client[0]->memberID;
 
@@ -332,11 +352,6 @@ class HrController extends Controller
 
             if ($updateRequest) {
                 $getClientRequest = ClientRequest::where('client_id', $request->id)->first();
-                $getClient = Client::where('id', $request->id)->first();
-
-                $getClient->update([
-                    'elapse_approved_time' => $getClientRequest->created_at->diffInMinutes($getClientRequest->updated_at)
-                ]);
 
                 $getClientRequest->update([
                     'elapsed_time' => $getClientRequest->created_at->diffInMinutes($getClientRequest->updated_at)
@@ -443,6 +458,9 @@ class HrController extends Controller
             // HR Disapproved — status 14
             Client::where('id', $request->id)->update([
                 'status' => 14,
+            ]);
+            ClientRequest::where('client_id', $request->id)->update([
+                'loa_status' => "Denied"
             ]);
         }
 
@@ -558,7 +576,7 @@ class HrController extends Controller
                         ? $clientRecord->dependent_first_name . ' ' . $clientRecord->dependent_last_name
                         : $clientRecord->first_name . ' ' . $clientRecord->last_name;
                     $sms = "From Lacson & Lacson:\n\nHi $patientSmsName,\n\nYour LOA request has been approved. Your LOA Number is $loa_number.\n\nYour reference number is $clientRecord->reference_number";
-                    (new NotificationController)->SmsNotification($clientRecord->contact, $sms);
+                    $this->SendSMS($clientRecord->contact, $sms);
                 }
 
                 $client = $this->SearchRequest(0, ['val' => $request->id]);
@@ -569,7 +587,7 @@ class HrController extends Controller
                 // isAuto = 0 — status 13 (pending client care manual handling)
                 Client::where('id', $request->id)->update([
                     'status' => 13,
-                    'user_id' => $user_id,
+                    // 'user_id' => $user_id,
                 ]);
 
                 $update = [
@@ -696,7 +714,7 @@ class HrController extends Controller
             if ($data['status'] === 3) {
                 if (isset($provider_portal->notification_sms) || $provider_portal->notification_sms != 'undefined') {
                     $smsProvider = 'Hi ' . $hospital->name . '\n\n' . 'LOA request for ' . ($dependent == null ? $name : $dependent) . ' is approved. You may now print LOA and issue to the patient. \n\nFor further inquiry and assistance, feel free to contact us through our 24/7 Client Care Hotline.';
-                    $smsProvider = (new NotificationController)->SmsNotification($provider_portal->notification_sms, $smsProvider);
+                    $this->SendSMS($provider_portal->notification_sms, $smsProvider);
                 }
 
                 if ($accept_eloa) {
@@ -707,8 +725,26 @@ class HrController extends Controller
             } else {
                 $sms = "From Lacson & Lacson:\n\nHi $name" . ($dependent !== null ? " and $dependent" : "") . ",\n\nYour LOA request is disapproved with remarks: $remarks\n\nFor further inquiry and assistance, feel free to contact us through our 24/7 Client Care Hotline.\n\nYour reference number is $ref\n\nThis is an auto-generated SMS. Doesn\'t support replies and calls.";
             }
-            $sms = (new NotificationController)->SmsNotification($contact, $sms);
+            $this->SendSMS($contact, $sms);
         }
+    }
+
+    private function SendSMS($sms, $message){
+        $ch = curl_init('http://192.159.66.221/goip/sendsms/');
+
+        $parameters = array(
+            'auth' => array('username' => "root", 'password' => "LACSONSMS"), //Your API KEY
+            'provider' => "SIMNETWORK",
+            'number' => $sms,
+            'content' => $message,
+          );
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        //Send the parameters set above with the request
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($parameters));
+
+        // Receive response from server
+        $output = curl_exec($ch);
+        curl_close($ch);
     }
 
     private function sendNotification($data, $name, $email, $altEmail, $contact, $dependent, $providerID)
@@ -789,7 +825,7 @@ class HrController extends Controller
             } else {
                 $sms = "From Lacson & Lacson:\n\nHi $name" . ($dependent !== null ? " and $dependent" : "") . ",\n\nYour LOA request is disapproved with remarks: $remarks\n\nFor further inquiry and assistance, feel free to contact us through our 24/7 Client Care Hotline.\n\nYour reference number is $ref\n\nThis is an auto-generated SMS. Doesn\'t support replies and calls.";
             }
-            $sms = (new NotificationController)->SmsNotification($contact, $sms);
+            $this->SendSMS($contact, $sms);
         }
     }
 
@@ -814,17 +850,6 @@ class HrController extends Controller
         ], 200);
     }
 
-    public function export(Request $request)
-    {
-        $request_status = $request->status;
-        $request_search = $request->search;
-        $request_from = $request->from;
-        $request_to = $request->to;
-
-        $records = $this->exportRecords($request_search, $request_status, $request_from, $request_to)->toArray();
-
-        return Excel::download(new HrExport($records), 'records' . now()->format('Y-m-d') . '.xlsx');
-    }
 
     public function previewExport(Request $request)
     {

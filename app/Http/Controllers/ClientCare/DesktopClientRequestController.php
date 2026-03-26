@@ -132,7 +132,7 @@ class DesktopClientRequestController extends Controller
         $patientLastName = $request->patientLastName;
 
         $now = Carbon::now();
-        
+
         $isWeekday = $now->isWeekday() ? 1 : 0;
 
         $ref_no = strtotime("now");
@@ -402,10 +402,11 @@ class DesktopClientRequestController extends Controller
 
                 return response()->json([
                     'refno' => $client->reference_number,
-                    'is_auto' => true,
+                    'isAuto' => true,
+                    'isHr' => true
                 ], 201);
-                } 
-                // If the company isAuto = 1 but it's not HR, it will directly generate the LOA without waiting for HR Approval 
+                }
+                // If the company isAuto = 1 but it's not HR, it will directly generate the LOA without waiting for HR Approval
                 else if($company->isAuto == 1){
                     $hospital_name = explode('++', $provider_name);
                     $hospital_name = $hospital_name[0];
