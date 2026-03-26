@@ -574,7 +574,7 @@ class HrController extends Controller
 
                 $update = [
                     'approval_code' => 'HR-APPROVED',
-                    'loa_status' => 'Pending',
+                    'loa_status' => 'Pending Approval',
                 ];
                 ClientRequest::where('client_id', $request->id)->update($update);
             }

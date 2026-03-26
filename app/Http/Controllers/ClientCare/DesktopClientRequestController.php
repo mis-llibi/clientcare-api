@@ -346,8 +346,8 @@ class DesktopClientRequestController extends Controller
         }
         // Validate if the remaining, complaint excluded and complaint approved is valid
         if($totalRemaining >= 1 && $isComplaintHasApproved == 1 && $exclusionComplaintChecker == 0){
-            // If the company isAuto = 1 and it's HR, it will first create a request then the HR Approval logic will handle the auto LOA generation
             if (!empty($company)) {
+                // If the company isAuto = 1 and it's HR, it will first create a request then the HR Approval logic will handle the auto LOA generation
                 if ($isHrCompany && $company->isAuto == 1){
                 $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
                 $employee_name = $employeeLastName . ", " . $employeeFirstName;
