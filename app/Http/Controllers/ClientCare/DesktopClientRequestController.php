@@ -792,20 +792,18 @@ class DesktopClientRequestController extends Controller
                     : $client->first_name . ' ' . $client->last_name;
         $time = "30 - 45";
 
-        if (!$isHrCompany) {
-            $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
-            if($client->alt_email){
-                $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
-            }
+        $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
 
-            if($client->contact){
-
-                $sms =
-                "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
-
-                $this->SendSMS($client->contact, $sms);
-            }
+        if($client->alt_email){
+            $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
         }
+
+        if($client->contact){
+            $sms =
+            "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
+            $this->SendSMS($client->contact, $sms);
+        }
+
 
         return response()->json([
             'refno' => $client->reference_number

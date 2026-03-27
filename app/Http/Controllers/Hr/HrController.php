@@ -32,6 +32,8 @@ use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SelfService\HrExport;
 
+use function PHPSTORM_META\map;
+
 class HrController extends Controller
 {
     //
@@ -312,14 +314,46 @@ class HrController extends Controller
         $update = [];
 
         if ($status === 14) {
-            // HR Disapproved — status 14
-            Client::where('id', $request->id)->update([
+
+
+
+            $client = Client::where('id', $request->id)->first();
+            $clientData = [
                 'status' => 14,
-                'remarks' => $request->disapproveRemarks ? strtoupper($request->disapproveRemarks) : null,
-            ]);
+                'remarks' => $request->disapproveRemarks ? strtoupper($request->disapproveRemarks) : null
+            ];
+
+            $client->update($clientData);
+
+            // HR Disapproved — status 14
+
+
+
+
             ClientRequest::where('client_id', $request->id)->update([
                 'loa_status' => "Denied"
             ]);
+
+            $fullname = $client->is_dependent ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . " " . $client->last_name;
+
+            $body = array(
+                'body' => view('send-disapprove-hr', [
+                    'name' => strtoupper($fullname)
+                ])
+            );
+
+            (new NotificationController)->EncryptedPDFMailNotification($fullname, $client->email, $body);
+
+            if($client->alt_email){
+                (new NotificationController)->EncryptedPDFMailNotification($fullname, $client->alt_email, $body);
+            }
+
+            if($client->contact){
+                $sms = "SMS\n\n$fullname";
+                $this->SendSMS($client->contact, $sms);
+            }
+
+
         }
 
         if ($status === 13) {

@@ -8,7 +8,10 @@
 </head>
 <body>
 
-    send email to patient from CALL HR FORM
+    <div>
+        Disapproved by HR {{ $name }}
+    </div>
+
 
 </body>
 </html>
