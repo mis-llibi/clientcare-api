@@ -400,6 +400,34 @@ class DesktopClientRequestController extends Controller
                 ClientRequest::create($clientRequestData);
                 Callback::create($callback);
 
+                $bodyHR = array(
+                    'body' => view('send-hr-notification-request', [
+                        'name' => $patient_name
+                    ]),
+                );
+                //COMMENT OUT BEFORE PUSHING INTO PROD
+                $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+                // $hrEmails = ['hrd@koolerindustries.com'];
+                $sendHrEmail = false;
+
+                foreach ($hrEmails as $hrEmail) {
+                    $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
+                    if ($sent) {
+                        $sendHrEmail = true;
+                    }
+                }
+
+                if ($sendHrEmail) {
+                    //COMMENT OUT BEFORE PUSHING INTO PROD
+                    $hrContacts = ['09276569771', '09762930730'];
+                    // $hrContacts = ['09985980670', '09985980643'];
+                    $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.\n\nReference: {$client->reference_number}";
+
+                    foreach ($hrContacts as $contactNum) {
+                        $this->SendSMS($contactNum, $smsMessage);
+                    }
+                }
+
                 return response()->json([
                     'refno' => $client->reference_number,
                     'isAuto' => true,
@@ -539,13 +567,36 @@ class DesktopClientRequestController extends Controller
                             "From Lacson & Lacson:\n\nHi $patientName,\n\nYour request have successfully approved.\n\nYour reference number is $client->reference_number";
                             $this->SendSMS($client->contact, $sms);
                         }
+                    $bodyHR = array(
+                        'body' => view('send-hr-notification-request', [
+                            'name' => $patient_name
+                        ]),
+                    );
 
+                    $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+                    $sendHrEmail = false;
 
-                        return response()->json([
-                            'isAuto' => true
-                        ], 201);
+                    foreach ($hrEmails as $hrEmail) {
+                        $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
+                        if ($sent) {
+                            $sendHrEmail = true;
+                        }
+                    }
 
-                    }else{
+                    if ($sendHrEmail) {
+                        $hrContacts = ['09276569771', '09762930730'];
+                        $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
+
+                        foreach ($hrContacts as $contactNum) {
+                            $this->SendSMS($contactNum, $smsMessage);
+                        }
+                    }
+                    return response()->json([
+                        'isAuto' => true
+                    ], 201);
+
+                    } else 
+                    {
                         return response()->json([
                             'error' => "Error in generating LOA"
                         ]);
@@ -619,6 +670,40 @@ class DesktopClientRequestController extends Controller
             "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
 
             $this->SendSMS($client->contact, $sms);
+        }
+
+        if ($isHrCompany) {
+            $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
+            $employee_name = $employeeLastName . ", " . $employeeFirstName;
+
+            $bodyHR = array(
+                'body' => view('send-hr-notification-request', [
+                    'name' => $patient_name
+                ]),
+            );
+
+            //COMMENT OUT BEFORE PUSHING INTO PROD
+            $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+            // $hrEmails = ['hrd@koolerindustries.com'];
+            $sendHrEmail = false;
+
+            foreach ($hrEmails as $hrEmail) {
+                $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
+                if ($sent) {
+                    $sendHrEmail = true;
+                }
+            }
+
+            if ($sendHrEmail) {
+                //COMMENT OUT BEFORE PUSHING INTO PROD
+                $hrContacts = ['09276569771', '09762930730'];
+                // $hrContacts = ['09985980670', '09985980643'];
+                $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
+
+                foreach ($hrContacts as $contactNum) {
+                    $this->SendSMS($contactNum, $smsMessage);
+                }
+            }
         }
 
         return response()->json([
@@ -804,6 +889,38 @@ class DesktopClientRequestController extends Controller
             $this->SendSMS($client->contact, $sms);
         }
 
+        if ($isHrCompany) {
+            $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
+            $employee_name = $employeeLastName . ", " . $employeeFirstName;
+
+            $bodyHR = array(
+                'body' => view('send-hr-notification-request', [
+                    'name' => $patient_name
+                ]),
+            );
+            //COMMENT OUT BEFORE PUSHING INTO PROD
+            $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+            // $hrEmails = ['hrd@koolerindustries.com'];
+            $sendHrEmail = false;
+
+            foreach ($hrEmails as $hrEmail) {
+                $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
+                if ($sent) {
+                    $sendHrEmail = true;
+                }
+            }
+
+            if ($sendHrEmail) {
+                //COMMENT OUT BEFORE PUSHING INTO PROD
+                $hrContacts = ['09276569771', '09762930730'];
+                // $hrContacts = ['09985980670', '09985980643'];
+                $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
+
+                foreach ($hrContacts as $contactNum) {
+                    $this->SendSMS($contactNum, $smsMessage);
+                }
+            }
+        }
 
         return response()->json([
             'refno' => $client->reference_number

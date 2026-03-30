@@ -106,26 +106,24 @@ class HrController extends Controller
             'loa_type' => $loa_type
         ];
 
-        if($email){
+        // if($email){
 
-            $patient_name = $patient_firstname . " " . $patient_lastname;
-            $body = array(
-                'body' => view('send-hr-approve'),
-            );
+        //     $patient_name = $patient_firstname . " " . $patient_lastname;
+        //     $body = array(
+        //         'body' => view('send-hr-approve'),
+        //     );
 
-            (new NotificationController)->EncryptedPDFMailNotification($patient_name, $email, $body);
-        }
+        //     (new NotificationController)->EncryptedPDFMailNotification($patient_name, $email, $body);
+        // }
 
-        if($alt_email){
-            $patient_name = $patient_firstname . " " . $patient_lastname;
-            $body = array(
-                'body' => view('send-hr-approve'),
-            );
+        // if($alt_email){
+        //     $patient_name = $patient_firstname . " " . $patient_lastname;
+        //     $body = array(
+        //         'body' => view('send-hr-approve'),
+        //     );
 
-            (new NotificationController)->EncryptedPDFMailNotification($patient_name, $alt_email, $body);
-        }
-
-
+        //     (new NotificationController)->EncryptedPDFMailNotification($patient_name, $alt_email, $body);
+        // }
 
         $clientRequest = ClientRequest::create($clientRequestData);
 
@@ -342,7 +340,8 @@ class HrController extends Controller
 
             $body = array(
                 'body' => view('send-disapprove-hr', [
-                    'name' => strtoupper($fullname)
+                    'name' => strtoupper($fullname),
+                    'reason' => $request->disapproveRemarks ? strtoupper($request->disapproveRemarks) : 'No reason provided'
                 ])
             );
 
