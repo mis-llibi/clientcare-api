@@ -132,6 +132,9 @@ class DesktopClientRequestController extends Controller
         $patientLastName = $request->patientLastName;
 
         $now = Carbon::now();
+
+        $isWeekday = $now->isWeekday() ? 1 : 0;
+
         $ref_no = strtotime("now");
 
         if($verificationDetailsType === 'insurance'){
@@ -187,6 +190,16 @@ class DesktopClientRequestController extends Controller
         if($now->greaterThan($findPatient->incepto)){
             return response()->json([
                 'message' => "Your policy has already expired"
+            ], 404);
+        }
+
+        $isWeekdayCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
+            ->where('isWeekday', 1)
+            ->exists();
+
+        if ($isWeekdayCompany && $isWeekday === 1) {
+            return response()->json([
+                'message' => "Please refer to your HR"
             ], 404);
         }
 
@@ -252,6 +265,10 @@ class DesktopClientRequestController extends Controller
         }else{
             $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
         }
+
+        $isHrCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
+            ->where('isHR', 1)
+            ->exists();
 
         $loa_status = "Pending Approval";
         $remaining = RemainingTbl::where('uniquecode', $findPatient->member_id)->first();
@@ -329,11 +346,68 @@ class DesktopClientRequestController extends Controller
         }
         // Validate if the remaining, complaint excluded and complaint approved is valid
         if($totalRemaining >= 1 && $isComplaintHasApproved == 1 && $exclusionComplaintChecker == 0){
+            if (!empty($company)) {
+                // If the company isAuto = 1 and it's HR, it will first create a request then the HR Approval logic will handle the auto LOA generation
+                if ($isHrCompany && $company->isAuto == 1){
+                $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
+                $employee_name = $employeeLastName . ", " . $employeeFirstName;
 
-            // If all of the requirements are valid, check if the company is auto generate LOA
-            if(!empty($company)){
+                $hospital_name = explode('++', $provider_name)[0];
+                $doctname = explode('++', $doctor_name)[0];
+                $doctname = $doctname == ", " ? "" : $doctname;
 
-                if($company->isAuto == 1){
+                $clientData = [
+                    'request_type' => 1,
+                    'reference_number' => $ref_no,
+                    'email' => $email,
+                    'alt_email' => $alt_email,
+                    'contact' => $contact,
+                    'member_id' => $patientType == 'employee' ? $findPatient->member_id : null,
+                    'first_name' => $patientType == "employee" ? $findPatient->first_name : strtoupper($employeeFirstName),
+                    'last_name' => $patientType == "employee" ? $findPatient->last_name : strtoupper($employeeLastName),
+                    'dob' => $patientType == "employee" ? $dob : null,
+                    'is_dependent' => $patientType == "dependent" ? 1 : null,
+                    'dependent_member_id' => $patientType == "dependent" ? $findPatient->member_id : null,
+                    'dependent_first_name' => $patientType == "dependent" ? $findPatient->first_name : null,
+                    'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
+                    'dependent_dob' => $patientType == "dependent" ? $dob : null,
+                    'provider_remarks' => $provider_remarks,
+                    'status' => 12,
+                    'platform' => 'hr',
+                    'provider_email2' => $providerEmail2,
+                    'remaining' => !$remaining ? null : $remaining->allow,
+                ];
+
+                $client = Client::create($clientData);
+                $complaint = $this->CheckComplaint($request->complaint, $client);
+
+                $clientRequestData = [
+                    'client_id' => $client->id,
+                    'member_id' => $findPatient->member_id,
+                    'provider_id' => $provider_id,
+                    'provider' => $provider_name,
+                    'doctor_id' => $doctor_id,
+                    'doctor_name' => $doctor_name,
+                    'loa_type' => $loaType,
+                    'complaint' => $complaint,
+                    'loa_status' => 'Pending Approval',
+                    'is_excluded' => $exclusionComplaintChecker,
+                    'is_auto' => 1,
+                ];
+
+                $callback = ['client_id' => $client->id, 'failed_count' => 0];
+
+                ClientRequest::create($clientRequestData);
+                Callback::create($callback);
+
+                return response()->json([
+                    'refno' => $client->reference_number,
+                    'isAuto' => true,
+                    'isHr' => true
+                ], 201);
+                }
+                // If the company isAuto = 1 but it's not HR, it will directly generate the LOA without waiting for HR Approval
+                else if($company->isAuto == 1){
                     $hospital_name = explode('++', $provider_name);
                     $hospital_name = $hospital_name[0];
 
@@ -476,10 +550,8 @@ class DesktopClientRequestController extends Controller
                             'error' => "Error in generating LOA"
                         ]);
                     }
-
                 }
             }
-
         }
 
 
@@ -498,7 +570,8 @@ class DesktopClientRequestController extends Controller
             'dependent_first_name' => $patientType == "dependent" ? $findPatient->first_name : null,
             'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
             'dependent_dob' => $patientType == "dependent" ? $dob : null,
-            'status' => 2,
+            'status' => $isHrCompany ? 12 : 2,
+            'platform' => $isHrCompany ? 'hr' : null,
             'provider_remarks' => $provider_remarks,
             'provider_email2' => $providerEmail2,
             'remaining' => !$remaining ? null : $remaining->allow
@@ -573,6 +646,8 @@ class DesktopClientRequestController extends Controller
 
         $now = Carbon::now();
 
+        $isWeekday = $now->isWeekday() ? 1 : 0;
+
        if($verificationDetailsType === 'insurance'){
             $findPatient = Masterlist::where('member_id', strtoupper($erCardNumber))
                                         ->where('birth_date', $dob)
@@ -628,6 +703,15 @@ class DesktopClientRequestController extends Controller
             ], 404);
         }
 
+        $isWeekdayCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
+            ->where('isWeekday', 1)
+            ->exists();
+
+        if ($isWeekdayCompany && $isWeekday === 1) {
+            return response()->json([
+                'message' => "Please refer to your HR"
+            ], 404);
+        }
 
         if(isset($request->provider) && $request->provider != 'undefined'){
             $provider = explode('--', $request->provider);
@@ -648,6 +732,10 @@ class DesktopClientRequestController extends Controller
 
         }
 
+        $isHrCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
+            ->where('isHR', 1)
+            ->exists();
+
         $clientData = [
             'request_type' => 1,
             'reference_number' => strtotime('now'),
@@ -663,7 +751,8 @@ class DesktopClientRequestController extends Controller
             'dependent_first_name' => $patientType == "dependent" ? $findPatient->first_name : null,
             'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
             'dependent_dob' => $patientType == "dependent" ? $dob : null,
-            'status' => 2,
+            'status' => $isHrCompany ? 12 : 2,
+            'platform' => $isHrCompany ? 'hr' : null,
             'provider_email2' => $providerEmail2
         ];
 
@@ -704,17 +793,17 @@ class DesktopClientRequestController extends Controller
         $time = "30 - 45";
 
         $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
+
         if($client->alt_email){
             $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
         }
 
         if($client->contact){
-
             $sms =
             "From Lacson & Lacson:\n\nHi $patientName,\n\nYou have successfully submitted your request for LOA.\n\nOur Client Care will respond to your request within $time minutes.\n\nYour reference number is $client->reference_number\n\nThis is an auto-generated SMS. Doesn’t support replies and calls.";
-
             $this->SendSMS($client->contact, $sms);
         }
+
 
         return response()->json([
             'refno' => $client->reference_number
@@ -1026,6 +1115,13 @@ class DesktopClientRequestController extends Controller
                 'message' => 'You cannot submit a follow-up request for this transaction.',
                 'type' => 'warning'
             ], 200);
+        }
+
+        if ($client->follow_up_request_quantity >= 5) {
+            return response()->json([
+                'message' => 'You have reached the maximum limit for submitting a follow up request.',
+                'limit_reached' => true
+            ], 403);
         }
 
         $checkRestriction = ClientFollowUpRequest::where('member_id', $client->member_id)

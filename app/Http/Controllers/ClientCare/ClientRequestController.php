@@ -99,6 +99,7 @@ class ClientRequestController extends Controller
 
         $now = Carbon::now();
 
+        $is_weekday = $now->isWeekday() ? 1 : 0;
 
         if($verificationDetailsType == "insurance"){
             $findPatient = Masterlist::where('member_id', strtoupper($erCardNumber))
@@ -154,6 +155,16 @@ class ClientRequestController extends Controller
             ], 404);
         }
 
+        $isWeekdayCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
+            ->where('isWeekday', 1)
+            ->exists();
+
+        if ($isWeekdayCompany && $is_weekday === 1) {
+            return response()->json([
+                'message' => "Please refer to your HR"
+            ], 404);
+        }
+
         // Find provider details in Hospital DB
         $provider = Hospital::where('id', $provider_id)
                             ->where('status', 1)
@@ -190,6 +201,10 @@ class ClientRequestController extends Controller
             ], 404);
         }
 
+        $isHrCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
+            ->where('isHR', 1)
+            ->exists();
+
         $client = [
             'request_type' => 1,
             'reference_number' => strtotime('now'),
@@ -204,7 +219,7 @@ class ClientRequestController extends Controller
             'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
             'dependent_dob' => $patientType == "dependent" ? $dob : null,
             'status' => 1,
-            'platform' => 'qr'
+            'platform' => $isHrCompany ? 'qr-hr' : 'qr'
         ];
 
 
@@ -354,6 +369,20 @@ class ClientRequestController extends Controller
 
         $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
 
+        $isHrCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
+            ->where('isHR', 1)
+            ->exists();
+
+        if ($isHrCompany) {
+            // Let isAuto HR companies fall through to the auto-LOA block below
+            if (empty($company) || $company->isAuto != 1) {
+                $clientRequest = ClientRequest::where('client_id', $findClientId->id)->first();
+                $clientRequest->update(['loa_status' => 'Pending Approval']);
+                $client->update(['status' => 12]);
+                return response()->json(['isHR' => true], 201);
+            }
+        }
+
         $loa_status = "Pending Approval";
 
 
@@ -449,7 +478,36 @@ class ClientRequestController extends Controller
 
         if($totalRemaining >= 1 && $isComplaintHasApproved == 1 && $exclusionComplaintChecker == 0){
             if(!empty($company)){
-                if($company->isAuto == 1){
+                //
+                if($isHrCompany && $company->isAuto == 1) {
+                    $complaint = $desktopController->CheckComplaint($request->complaint, $client);
+
+                    $clientRequestData = [
+                        'complaint' => $complaint,
+                        'doctor_id' => $doctor_id,
+                        'doctor_name' => $doctor_name,
+                        'loa_status' => 'Pending Approval',
+                        'is_excluded' => $exclusionComplaintChecker,
+                        'is_auto' => 1,
+                    ];
+
+                    $clientRequest = ClientRequest::where('client_id', $findClientId->id)->first();
+                    $clientRequest->update($clientRequestData);
+
+                    $client->update([
+                        'status' => 12,
+                        'alt_email' => $email,
+                        'contact' => $contact,
+                        'remaining' => !$remaining ? null : $remaining->allow,
+                        'provider_remarks' => $provider_remarks ?? null,
+                    ]);
+
+                    return response()->json([
+                        'is_auto' => true,
+                    ], 201);
+                }
+                //
+                else if($company->isAuto == 1){
 
 
                     $hospital = $request->hospital;
@@ -677,8 +735,14 @@ class ClientRequestController extends Controller
 
 
         $client = Client::where('id', $findClientId->id)->first();
+
+        $findPatient = Masterlist::where('member_id', $client->member_id)->first();
+        $isHrCompany = $findPatient
+            ? CompanyV2::where('corporate_compcode', $findPatient->company_code)->where('isHR', 1)->exists()
+            : false;
+
         $clientData = [
-            'status' => 2,
+            'status' => $isHrCompany ? 12 : 2,
             'alt_email' => $email,
             'contact' => $contact
         ];
@@ -697,6 +761,10 @@ class ClientRequestController extends Controller
                     'file_link' => config('app.DO_ENDPOINT') . "/" . $path
                 ]);
             }
+        }
+
+        if ($isHrCompany) {
+            return response(201);
         }
 
         $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . ' ' . $client->last_name;

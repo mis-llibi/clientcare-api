@@ -138,12 +138,26 @@ Route::post('/error-logs', [ErrorLogsController::class, 'UpdateErrorLog']);
 
 Route::post('/csv/import', [CsvUploaderController::class, 'import']);
 
-// Hati API
-Route::get("/member-validation", [MemberValidationController::class, 'validateMember'])->middleware('hati_api_key');
+// HR (protected by hr_users guard)
+
+Route::middleware(['auth:hr_users'])->group(function () {
+    Route::get('/hr-search-request/{search}/{id}', [HrController::class, 'SearchRequest']);
+    Route::post('/hr-update-request-approval', [HrController::class, 'UpdateRequestApproval']);
+    Route::get('/hr-get-companies', [HrController::class, 'GetCompanies']);
+    Route::post('/hr/view-by', [HrController::class, 'viewBy']);
+    Route::get('/hr/view-logs', [HrController::class, 'viewLogs']);
+    Route::get('/hr/pending-counter', [HrController::class, 'pendingCounter']);
+    Route::get('/hr/get-files/{id}', [HrController::class, 'getFiles']);
+    Route::get('/hr/get-procedure/{id}', [HrController::class, 'getProcedure']);
+});
 
 // HR Api
 Route::get('/hr-companies', [HrController::class, 'index']);
 Route::post('/submit-hr-patient', [HrController::class, 'submitForms']);
+
+// Hati API
+Route::get("/member-validation", [MemberValidationController::class, 'validateMember'])->middleware('hati_api_key');
+
 
 // Email Preview Route
 // Route::get('/preview', function () {
@@ -151,3 +165,11 @@ Route::post('/submit-hr-patient', [HrController::class, 'submitForms']);
 //             'patientName' => 'John Doe',
 //         ]);
 //     });
+
+Route::get('/debug-session', function () {
+    return [
+        'has_session' => request()->hasSession(),
+        'session_id' => request()->hasSession() ? request()->session()->getId() : null,
+        'user' => auth('hr_users')->user()
+    ];
+});
