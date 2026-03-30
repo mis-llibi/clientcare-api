@@ -60,9 +60,13 @@ class HrController extends Controller
         $email = $request->email;
         $alt_email = $request->alt_email;
 
-        // $company = CompanyV2::where('id', $company_id)->first();
-
-
+        // Ensure we retrieve the company model properly using the passed company_id
+        $company = CompanyV2::where('id', $company_id)->first();
+        
+        $isHrCompany = false;
+        if ($company && $company->isHR == 1) {
+            $isHrCompany = true;
+        }
 
         $clientData = [
             'request_type' => 1,
@@ -105,6 +109,41 @@ class HrController extends Controller
             'loa_status' => "Pending Approval",
             'loa_type' => $loa_type
         ];
+
+            if ($isHrCompany) {
+            $patient_name = $patient_lastname . ", " . $patient_firstname;
+            $employee_name = $patient_lastname . ", " . $patient_firstname;
+
+            $bodyHR = array(
+                'body' => view('send-hr-notification-request', [
+                    'name' => $patient_name
+                ]),
+            );
+
+            //COMMENT OUT BEFORE PUSHING INTO PROD
+            $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+            // $hrEmails = ['hrd@koolerindustries.com'];
+            $sendHrEmail = false;
+
+            foreach ($hrEmails as $hrEmail) {
+                $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
+                if ($sent) {
+                    $sendHrEmail = true;
+                }
+            }
+
+            if ($sendHrEmail) {
+                //COMMENT OUT BEFORE PUSHING INTO PROD
+                $hrContacts = ['09276569771', '09762930730'];
+                // $hrContacts = ['09985980670', '09985980643'];
+                $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
+
+                foreach ($hrContacts as $contactNum) {
+                    $this->SendSMS($contactNum, $smsMessage);
+                }
+            }
+        }
+
 
         // if($email){
 
