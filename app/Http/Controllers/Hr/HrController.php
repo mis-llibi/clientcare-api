@@ -74,7 +74,7 @@ class HrController extends Controller
             'dependent_last_name' => $patient_type != "employee" ? $patient_lastname : null,
             'status' => 12,
             'user_id' => $user_id,
-            'platform' => "hr",
+            'platform' => "hr-call",
             'email' => $email,
             'alt_email' => $alt_email
 
@@ -315,6 +315,7 @@ class HrController extends Controller
         $status = (int)$request->status;
         $update = [];
 
+
         if ($status === 14) {
 
 
@@ -333,7 +334,8 @@ class HrController extends Controller
 
 
             ClientRequest::where('client_id', $request->id)->update([
-                'loa_status' => "Denied"
+                'loa_status' => "Denied",
+                'hr_user' => $user_id
             ]);
 
             $fullname = $client->is_dependent ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . " " . $client->last_name;
@@ -414,7 +416,9 @@ class HrController extends Controller
                     'loa_number' => $loa_number,
                     'loa_attachment' => env('DO_LLIBI_CDN_ENDPOINT') . '/loa/generated/' . $loa_number,
                     'approval_code' => 'HR-APPROVED',
+                    'hr_user' => $user_id
                 ];
+
                 ClientRequest::where('client_id', $request->id)->update($update);
 
                 // Send LOA notification to patient
@@ -487,6 +491,7 @@ class HrController extends Controller
                 $update = [
                     'approval_code' => 'HR-APPROVED',
                     'loa_status' => 'Pending Approval',
+                    'hr_user' => $user_id
                 ];
                 ClientRequest::where('client_id', $request->id)->update($update);
             }

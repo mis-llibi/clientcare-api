@@ -24,6 +24,7 @@ class ClientRequest extends Model
         'is_excluded',
         'loa_number',
         'loa_attachment',
-        'is_auto'
+        'is_auto',
+        'hr_user'
     ];
 }
