@@ -55,6 +55,7 @@ class HrController extends Controller
         $provider = $request->provider;
         $company_id = $request->company_id;
         $user_id = $request->user_id;
+        $loa_type = $request->loaType;
 
         $email = $request->email;
         $alt_email = $request->alt_email;
@@ -102,6 +103,7 @@ class HrController extends Controller
             'provider' => $providerCol,
             'complaint' => $chief_complaint,
             'loa_status' => "Pending Approval",
+            'loa_type' => $loa_type
         ];
 
         if($email){
