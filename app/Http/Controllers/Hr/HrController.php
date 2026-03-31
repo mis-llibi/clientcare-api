@@ -55,13 +55,18 @@ class HrController extends Controller
         $provider = $request->provider;
         $company_id = $request->company_id;
         $user_id = $request->user_id;
+        $loa_type = $request->loaType;
 
         $email = $request->email;
         $alt_email = $request->alt_email;
 
-        // $company = CompanyV2::where('id', $company_id)->first();
-
-
+        // Ensure we retrieve the company model properly using the passed company_id
+        $company = CompanyV2::where('id', $company_id)->first();
+        
+        $isHrCompany = false;
+        if ($company && $company->isHR == 1) {
+            $isHrCompany = true;
+        }
 
         $clientData = [
             'request_type' => 1,
@@ -73,7 +78,7 @@ class HrController extends Controller
             'dependent_last_name' => $patient_type != "employee" ? $patient_lastname : null,
             'status' => 12,
             'user_id' => $user_id,
-            'platform' => "hr",
+            'platform' => "hr-call",
             'email' => $email,
             'alt_email' => $alt_email
 
@@ -102,28 +107,62 @@ class HrController extends Controller
             'provider' => $providerCol,
             'complaint' => $chief_complaint,
             'loa_status' => "Pending Approval",
+            'loa_type' => $loa_type
         ];
 
-        if($email){
+            if ($isHrCompany) {
+            $patient_name = $patient_lastname . ", " . $patient_firstname;
+            $employee_name = $patient_lastname . ", " . $patient_firstname;
 
-            $patient_name = $patient_firstname . " " . $patient_lastname;
-            $body = array(
-                'body' => view('send-hr-approve'),
+            $bodyHR = array(
+                'body' => view('send-hr-notification-request', [
+                    'name' => $patient_name
+                ]),
             );
 
-            (new NotificationController)->EncryptedPDFMailNotification($patient_name, $email, $body);
+            //COMMENT OUT BEFORE PUSHING INTO PROD
+            $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+            // $hrEmails = ['hrd@koolerindustries.com'];
+            $sendHrEmail = false;
+
+            foreach ($hrEmails as $hrEmail) {
+                $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
+                if ($sent) {
+                    $sendHrEmail = true;
+                }
+            }
+
+            if ($sendHrEmail) {
+                //COMMENT OUT BEFORE PUSHING INTO PROD
+                $hrContacts = ['09276569771', '09762930730'];
+                // $hrContacts = ['09985980670', '09985980643'];
+                $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
+
+                foreach ($hrContacts as $contactNum) {
+                    $this->SendSMS($contactNum, $smsMessage);
+                }
+            }
         }
 
-        if($alt_email){
-            $patient_name = $patient_firstname . " " . $patient_lastname;
-            $body = array(
-                'body' => view('send-hr-approve'),
-            );
 
-            (new NotificationController)->EncryptedPDFMailNotification($patient_name, $alt_email, $body);
-        }
+        // if($email){
 
+        //     $patient_name = $patient_firstname . " " . $patient_lastname;
+        //     $body = array(
+        //         'body' => view('send-hr-approve'),
+        //     );
 
+        //     (new NotificationController)->EncryptedPDFMailNotification($patient_name, $email, $body);
+        // }
+
+        // if($alt_email){
+        //     $patient_name = $patient_firstname . " " . $patient_lastname;
+        //     $body = array(
+        //         'body' => view('send-hr-approve'),
+        //     );
+
+        //     (new NotificationController)->EncryptedPDFMailNotification($patient_name, $alt_email, $body);
+        // }
 
         $clientRequest = ClientRequest::create($clientRequestData);
 
@@ -313,6 +352,7 @@ class HrController extends Controller
         $status = (int)$request->status;
         $update = [];
 
+
         if ($status === 14) {
 
 
@@ -331,14 +371,16 @@ class HrController extends Controller
 
 
             ClientRequest::where('client_id', $request->id)->update([
-                'loa_status' => "Denied"
+                'loa_status' => "Denied",
+                'hr_user' => $user_id
             ]);
 
             $fullname = $client->is_dependent ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . " " . $client->last_name;
 
             $body = array(
                 'body' => view('send-disapprove-hr', [
-                    'name' => strtoupper($fullname)
+                    'name' => strtoupper($fullname),
+                    'reason' => $request->disapproveRemarks ? strtoupper($request->disapproveRemarks) : 'No reason provided'
                 ])
             );
 
@@ -412,7 +454,9 @@ class HrController extends Controller
                     'loa_number' => $loa_number,
                     'loa_attachment' => env('DO_LLIBI_CDN_ENDPOINT') . '/loa/generated/' . $loa_number,
                     'approval_code' => 'HR-APPROVED',
+                    'hr_user' => $user_id
                 ];
+
                 ClientRequest::where('client_id', $request->id)->update($update);
 
                 // Send LOA notification to patient
@@ -485,6 +529,7 @@ class HrController extends Controller
                 $update = [
                     'approval_code' => 'HR-APPROVED',
                     'loa_status' => 'Pending Approval',
+                    'hr_user' => $user_id
                 ];
                 ClientRequest::where('client_id', $request->id)->update($update);
             }
