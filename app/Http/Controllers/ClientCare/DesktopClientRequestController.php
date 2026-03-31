@@ -400,19 +400,14 @@ class DesktopClientRequestController extends Controller
                 ClientRequest::create($clientRequestData);
                 Callback::create($callback);
 
-                $body = array(
-                    'body' => view('send-request-loa', [
-                        'name' =>  $patientType == "employee" ? strtoupper($patient_name) : strtoupper($employee_name),
-                        'dependent' => $patientType == "employee" ? null : $patient_name,
-                        'statusRemarks' => $statusRemarks,
-                        'is_accept_eloa' => $accept_eloa,
-                        'ref' => $ref_no,
-                        'feedbackLink' => $feedbackLink,
-                    ]),
-                    'attachment' => $attachment
-                    );
+                $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name
+                : $client->first_name . ' ' . $client->last_name;
+                $time = "15 - 30";
 
-                $sendEmail = (new NotificationController)->EncryptedPDFMailNotification($patient_name, $email, $body);
+                $sendEmail = $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
+                if($client->alt_email){
+                    $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
+                }
 
                 if(isset($alt_email)){
                     (new NotificationController)->EncryptedPDFMailNotification($patient_name, $alt_email, $body);
@@ -566,8 +561,6 @@ class DesktopClientRequestController extends Controller
                         </a>
                     </div>
                     <br /><br />';
-
-
 
                     $body = array(
                         'body' => view('send-request-loa', [
