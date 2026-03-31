@@ -35,7 +35,7 @@ class HrAuthController extends Controller
             'password' => Hash::make($request->string('password')),
         ]);
 
-        Auth::guard('hr_users')->login($user);
+        Auth::guard('hr')->login($user);
 
         $request->session()->regenerate();
 
@@ -57,7 +57,7 @@ class HrAuthController extends Controller
 
         $this->ensureIsNotRateLimited($request);
 
-        if (! Auth::guard('hr_users')->attempt(
+        if (! Auth::guard('hr')->attempt(
             $request->only('email', 'password'),
             $request->boolean('remember')
         )) {
@@ -83,7 +83,7 @@ class HrAuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        Auth::guard('hr_users')->logout();
+        Auth::guard('hr')->logout();
 
         $request->session()->invalidate();
 
@@ -99,7 +99,7 @@ class HrAuthController extends Controller
      */
     public function user(Request $request): JsonResponse
     {
-        $user = Auth::guard('hr_users')->user();
+        $user = Auth::guard('hr')->user();
 
         if (! $user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);

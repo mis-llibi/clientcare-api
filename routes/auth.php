@@ -40,15 +40,15 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 use App\Http\Controllers\Auth\HrAuthController;
 
 Route::post('/hr/register', [HrAuthController::class, 'register'])
-    ->middleware('guest:hr_users')
+    ->middleware('guest:hr')
     ->name('hr.register');
 
 Route::post('/hr/login', [HrAuthController::class, 'login'])
-    ->middleware('guest:hr_users')
-    ->name('hr.login');
+    ->middleware('guest:hr')
+    ->name('hr.hr');
 
 Route::post('/hr/logout', [HrAuthController::class, 'logout'])
-    ->middleware('auth:hr_users')
+    ->middleware('auth:hr')
     ->name('hr.logout');
 
 Route::get('/hr/user', [HrAuthController::class, 'user'])
