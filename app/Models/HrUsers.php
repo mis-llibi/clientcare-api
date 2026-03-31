@@ -11,7 +11,8 @@ use App\Models\ClientCare\Client;
 class HrUsers extends Authenticatable
 {
     //
-    protected $table = 'llibiapp_portal.hr_users';
+    protected $connection = 'portal_request_db';
+    protected $table = 'hr_users';
 
     use Notifiable;
 
