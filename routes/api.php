@@ -140,7 +140,7 @@ Route::post('/csv/import', [CsvUploaderController::class, 'import']);
 
 // HR (protected by hr_users guard)
 
-Route::middleware(['auth:hr_users'])->group(function () {
+Route::middleware(['auth:hr'])->group(function () {
     Route::get('/hr-search-request/{search}/{id}', [HrController::class, 'SearchRequest']);
     Route::post('/hr-update-request-approval', [HrController::class, 'UpdateRequestApproval']);
     Route::get('/hr-get-companies', [HrController::class, 'GetCompanies']);
