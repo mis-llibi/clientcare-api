@@ -29,7 +29,7 @@ class HrAuthController extends Controller
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:App\Models\HrUsers,email'],
             'contact_number' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed'],
         ]);
 
         $user = HrUsers::create([
@@ -43,9 +43,9 @@ class HrAuthController extends Controller
             'password' => Hash::make($request->string('password')),
         ]);
 
-        Auth::guard('hr_users')->login($user);
+        // Auth::guard('hr_users')->login($user);
 
-        $request->session()->regenerate();
+        // $request->session()->regenerate();
 
         return response()->json([
             'message' => 'Registration successful.',
