@@ -53,3 +53,6 @@ Route::post('/hr/logout', [HrAuthController::class, 'logout'])
 
 Route::get('/hr/user', [HrAuthController::class, 'user'])
     ->name('hr.user');
+
+Route::put('/hr/change-password', [HrAuthController::class, 'changePassword'])
+    ->middleware('auth:hr_users');
