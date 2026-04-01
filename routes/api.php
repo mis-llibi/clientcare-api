@@ -149,6 +149,7 @@ Route::middleware(['web','auth:hr_users'])->group(function () {
     Route::get('/hr/pending-counter', [HrController::class, 'pendingCounter']);
     Route::get('/hr/get-files/{id}', [HrController::class, 'getFiles']);
     Route::get('/hr/get-procedure/{id}', [HrController::class, 'getProcedure']);
+
 });
 
 // HR Api

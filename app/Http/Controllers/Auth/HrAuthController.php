@@ -94,6 +94,32 @@ class HrAuthController extends Controller
         ]);
     }
 
+    public function changePassword(Request $request){
+        $request->validate([
+            'current_password' => ['required'],
+            'new_password' => ['required', 'min:8'],
+            'confirm_password' => ['required', 'same:new_password'],
+        ]);
+
+        if(!Hash::check($request->current_password, $request->user()->password)){
+            return response()->json([
+                'message' => 'Current Password is incorrect'
+            ]);
+        }
+
+        HrUsers::where('id', $request->user()->id)->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        return response()->json([
+            'message' => 'Password changed successfully'
+        ], 200);
+
+
+
+
+    }
+
     /**
      * Get the authenticated HR user.
      */
