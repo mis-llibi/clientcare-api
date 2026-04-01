@@ -22,16 +22,24 @@ class HrAuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $request->validate([
+            'comp_code' => ['required', 'string', 'max:255'],
+            'company_name' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'unique:App\Models\HrUsers,username'],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:App\Models\HrUsers,email'],
+            'contact_number' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = HrUsers::create([
+            'comp_code' => $request->comp_code ?? '',
+            'company_name' => $request->company_name,
+            'username' => $request->username,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,
+            'contact_number' => $request->contact_number,
             'password' => Hash::make($request->string('password')),
         ]);
 
@@ -51,20 +59,20 @@ class HrAuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => ['required', 'string', 'email'],
+            'username' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
         $this->ensureIsNotRateLimited($request);
 
         if (! Auth::guard('hr_users')->attempt(
-            $request->only('email', 'password'),
+            $request->only('username', 'password'),
             $request->boolean('remember')
         )) {
             RateLimiter::hit($this->throttleKey($request));
 
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'username' => __('auth.failed'),
             ]);
         }
 
@@ -160,6 +168,6 @@ class HrAuthController extends Controller
      */
     protected function throttleKey(Request $request): string
     {
-        return Str::transliterate(Str::lower($request->string('email')) . '|' . $request->ip());
+        return Str::transliterate(Str::lower($request->string('username')) . '|' . $request->ip());
     }
 }

@@ -17,10 +17,14 @@ class HrUsers extends Authenticatable
     use Notifiable;
 
     protected $fillable = [
+        'comp_code',
+        'company_name',
+        'username',
         'first_name',
         'last_name',
         'email',
         'password',
+        'contact_number',
     ];
 
     protected $hidden = [
