@@ -62,7 +62,7 @@ class HrController extends Controller
 
         // Ensure we retrieve the company model properly using the passed company_id
         $company = CompanyV2::where('id', $company_id)->first();
-        
+
         $isHrCompany = false;
         if ($company && $company->isHR == 1) {
             $isHrCompany = true;
@@ -121,8 +121,8 @@ class HrController extends Controller
             );
 
             //COMMENT OUT BEFORE PUSHING INTO PROD
-            $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
-            // $hrEmails = ['hrd@koolerindustries.com'];
+            // $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+            $hrEmails = ['hrd@koolerindustries.com'];
             $sendHrEmail = false;
 
             foreach ($hrEmails as $hrEmail) {
@@ -134,8 +134,8 @@ class HrController extends Controller
 
             if ($sendHrEmail) {
                 //COMMENT OUT BEFORE PUSHING INTO PROD
-                $hrContacts = ['09276569771', '09762930730'];
-                // $hrContacts = ['09985980670', '09985980643'];
+                // $hrContacts = ['09276569771', '09762930730'];
+                $hrContacts = ['09985980670', '09985980643'];
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
                 foreach ($hrContacts as $contactNum) {

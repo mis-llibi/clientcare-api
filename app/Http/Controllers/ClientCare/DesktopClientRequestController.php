@@ -417,7 +417,7 @@ class DesktopClientRequestController extends Controller
                             "From Lacson & Lacson:\n\nHi $patientName,\n\nYour request have successfully approved.\n\nYour reference number is $client->reference_number";
                             $this->SendSMS($client->contact, $sms);
                         }
-                        
+
                         $bodyHR = array(
                             'body' => view('send-hr-notification-request', [
                                 'name' => $patient_name
@@ -425,8 +425,8 @@ class DesktopClientRequestController extends Controller
                         );
 
                         //COMMENT OUT BEFORE PUSHING INTO PROD
-                        $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
-                        // $hrEmails = ['hrd@koolerindustries.com'];
+                        // $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+                        $hrEmails = ['hrd@koolerindustries.com'];
                         $sendHrEmail = false;
                         foreach ($hrEmails as $hrEmail) {
                             $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
@@ -437,8 +437,8 @@ class DesktopClientRequestController extends Controller
 
                         if ($sendHrEmail) {
                             //COMMENT OUT BEFORE PUSHING INTO PROD
-                            $hrContacts = ['09276569771', '09762930730'];
-                            // $hrContacts = ['09985980670', '09985980643'];
+                            // $hrContacts = ['09276569771', '09762930730'];
+                            $hrContacts = ['09985980670', '09985980643'];
                             $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.\n\nReference: {$client->reference_number}";
                             foreach ($hrContacts as $contactNum) {
                                 $this->SendSMS($contactNum, $smsMessage);
@@ -587,7 +587,7 @@ class DesktopClientRequestController extends Controller
                         'isAuto' => true
                     ], 201);
 
-                    } else 
+                    } else
                     {
                         return response()->json([
                             'error' => "Error in generating LOA"
@@ -675,8 +675,8 @@ class DesktopClientRequestController extends Controller
             );
 
             //COMMENT OUT BEFORE PUSHING INTO PROD
-            $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
-            // $hrEmails = ['hrd@koolerindustries.com'];
+            // $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+            $hrEmails = ['hrd@koolerindustries.com'];
             $sendHrEmail = false;
 
             foreach ($hrEmails as $hrEmail) {
@@ -688,8 +688,8 @@ class DesktopClientRequestController extends Controller
 
             if ($sendHrEmail) {
                 //COMMENT OUT BEFORE PUSHING INTO PROD
-                $hrContacts = ['09276569771', '09762930730'];
-                // $hrContacts = ['09985980670', '09985980643'];
+                // $hrContacts = ['09276569771', '09762930730'];
+                $hrContacts = ['09985980670', '09985980643'];
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
                 foreach ($hrContacts as $contactNum) {
@@ -891,8 +891,8 @@ class DesktopClientRequestController extends Controller
                 ]),
             );
             //COMMENT OUT BEFORE PUSHING INTO PROD
-            $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
-            // $hrEmails = ['hrd@koolerindustries.com'];
+            // $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+            $hrEmails = ['hrd@koolerindustries.com'];
             $sendHrEmail = false;
 
             foreach ($hrEmails as $hrEmail) {
@@ -904,8 +904,8 @@ class DesktopClientRequestController extends Controller
 
             if ($sendHrEmail) {
                 //COMMENT OUT BEFORE PUSHING INTO PROD
-                $hrContacts = ['09276569771', '09762930730'];
-                // $hrContacts = ['09985980670', '09985980643'];
+                // $hrContacts = ['09276569771', '09762930730'];
+                $hrContacts = ['09985980670', '09985980643'];
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
                 foreach ($hrContacts as $contactNum) {
