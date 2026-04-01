@@ -24,6 +24,7 @@ use App\Models\ClientCare\CompanyV2;
 use App\Models\ClientCare\LoaInTransit;
 use App\Models\ClientCare\ClientErrorLogs;
 use App\Models\ClientCare\ClientFollowUpRequest;
+use App\Models\HrUsers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
@@ -270,6 +271,11 @@ class DesktopClientRequestController extends Controller
             ->where('isHR', 1)
             ->exists();
 
+        // Dynamic HR notification recipients based on company code
+        $hrUsers = HrUsers::where('comp_code', $findPatient->company_code)->get();
+        $hrEmails = $hrUsers->pluck('email')->filter()->values()->toArray();
+        $hrContacts = $hrUsers->pluck('contact_number')->filter()->values()->toArray();
+
         $loa_status = "Pending Approval";
         $remaining = RemainingTbl::where('uniquecode', $findPatient->member_id)->first();
 
@@ -362,6 +368,7 @@ class DesktopClientRequestController extends Controller
                     'email' => $email,
                     'alt_email' => $alt_email,
                     'contact' => $contact,
+                    'company_code' => $findPatient->company_code,
                     'member_id' => $patientType == 'employee' ? $findPatient->member_id : null,
                     'first_name' => $patientType == "employee" ? $findPatient->first_name : strtoupper($employeeFirstName),
                     'last_name' => $patientType == "employee" ? $findPatient->last_name : strtoupper($employeeLastName),
@@ -424,10 +431,6 @@ class DesktopClientRequestController extends Controller
                             ]),
                         );
 
-                        //COMMENT OUT BEFORE PUSHING INTO PROD
-                        // $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
-                        $hrEmails = ['hrd@koolerindustries.com'];
-                        $sendHrEmail = false;
                         foreach ($hrEmails as $hrEmail) {
                             $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
                             if ($sent) {
@@ -435,10 +438,11 @@ class DesktopClientRequestController extends Controller
                             }
                         }
 
+                        if ($findPatient->company_code === 'KOOLR') {
+                            (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+                        }
+
                         if ($sendHrEmail) {
-                            //COMMENT OUT BEFORE PUSHING INTO PROD
-                            // $hrContacts = ['09276569771', '09762930730'];
-                            $hrContacts = ['09985980670', '09985980643'];
                             $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.\n\nReference: {$client->reference_number}";
                             foreach ($hrContacts as $contactNum) {
                                 $this->SendSMS($contactNum, $smsMessage);
@@ -485,6 +489,7 @@ class DesktopClientRequestController extends Controller
                         'email' => $email,
                         'alt_email' => $alt_email,
                         'contact' => $contact,
+                        'company_code' => $findPatient->company_code,
                         'member_id' => $patientType == 'employee' ? $findPatient->member_id : null,
                         'first_name' => $patientType == "employee" ? $findPatient->first_name : strtoupper($employeeFirstName),
                         'last_name' => $patientType == "employee" ? $findPatient->last_name : strtoupper($employeeLastName),
@@ -604,6 +609,7 @@ class DesktopClientRequestController extends Controller
             'email' => $email,
             'alt_email' => $alt_email,
             'contact' => $contact,
+            'company_code' => $findPatient->company_code,
             'member_id' => $patientType == 'employee' ? $findPatient->member_id : null,
             'first_name' => $patientType == "employee" ? $findPatient->first_name : strtoupper($employeeFirstName),
             'last_name' => $patientType == "employee" ? $findPatient->last_name : strtoupper($employeeLastName),
@@ -673,10 +679,6 @@ class DesktopClientRequestController extends Controller
                     'name' => $patient_name
                 ]),
             );
-
-            //COMMENT OUT BEFORE PUSHING INTO PROD
-            // $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
-            $hrEmails = ['hrd@koolerindustries.com'];
             $sendHrEmail = false;
 
             foreach ($hrEmails as $hrEmail) {
@@ -686,10 +688,11 @@ class DesktopClientRequestController extends Controller
                 }
             }
 
+            if ($findPatient->company_code === 'KOOLR') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+            }
+
             if ($sendHrEmail) {
-                //COMMENT OUT BEFORE PUSHING INTO PROD
-                // $hrContacts = ['09276569771', '09762930730'];
-                $hrContacts = ['09985980670', '09985980643'];
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
                 foreach ($hrContacts as $contactNum) {
@@ -813,12 +816,18 @@ class DesktopClientRequestController extends Controller
             ->where('isHR', 1)
             ->exists();
 
+        // Dynamic HR notification recipients based on company code
+        $hrUsers = HrUsers::where('comp_code', $findPatient->company_code)->get();
+        $hrEmails = $hrUsers->pluck('email')->filter()->values()->toArray();
+        $hrContacts = $hrUsers->pluck('contact_number')->filter()->values()->toArray();
+
         $clientData = [
             'request_type' => 1,
             'reference_number' => strtotime('now'),
             'email' => $email,
             'alt_email' => $alt_email,
             'contact' => $contact,
+            'company_code' => $findPatient->company_code,
             'member_id' => $patientType == 'employee' ? $findPatient->member_id : null,
             'first_name' => $patientType == "employee" ? $findPatient->first_name : strtoupper($employeeFirstName),
             'last_name' => $patientType == "employee" ? $findPatient->last_name : strtoupper($employeeLastName),
@@ -890,9 +899,6 @@ class DesktopClientRequestController extends Controller
                     'name' => $patient_name
                 ]),
             );
-            //COMMENT OUT BEFORE PUSHING INTO PROD
-            // $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
-            $hrEmails = ['hrd@koolerindustries.com'];
             $sendHrEmail = false;
 
             foreach ($hrEmails as $hrEmail) {
@@ -902,10 +908,11 @@ class DesktopClientRequestController extends Controller
                 }
             }
 
+            if ($findPatient->company_code === 'KOOLR') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+            }
+
             if ($sendHrEmail) {
-                //COMMENT OUT BEFORE PUSHING INTO PROD
-                // $hrContacts = ['09276569771', '09762930730'];
-                $hrContacts = ['09985980670', '09985980643'];
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
                 foreach ($hrContacts as $contactNum) {

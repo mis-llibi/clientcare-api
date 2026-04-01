@@ -41,12 +41,21 @@ class HrController extends Controller
     public function index(){
         return CompanyV2::where('isHR', 1)->select([
                             'id as value',
-                            'name'
+                            'name',
+                            'corporate_compcode as comp_code'
                         ])
                         ->get();
     }
 
     public function submitForms(Request $request){
+
+        //Contact No for HR Notifications
+        $hrContactsProd = ['09985980670', '09985980643'];
+        $hrContactsLocal = ['09276569771', '09762930730'];
+        //Email for HR Notifications
+        $hrEmailsLocal = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
+        $hrEmailsProd = ['hrd@koolerindustries.com'];
+
 
         $chief_complaint = $request->chiefComplaint;
         $patient_firstname = strtoupper($request->patientFirstName);
@@ -80,10 +89,10 @@ class HrController extends Controller
             'user_id' => $user_id,
             'platform' => "hr-call",
             'email' => $email,
-            'alt_email' => $alt_email
+            'alt_email' => $alt_email,
+            'company_code' => $company->corporate_compcode
 
         ];
-
 
 
         $client = Client::create($clientData);
@@ -120,12 +129,9 @@ class HrController extends Controller
                 ]),
             );
 
-            //COMMENT OUT BEFORE PUSHING INTO PROD
-            // $hrEmails = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
-            $hrEmails = ['hrd@koolerindustries.com'];
             $sendHrEmail = false;
 
-            foreach ($hrEmails as $hrEmail) {
+            foreach ($hrEmailsLocal as $hrEmail) {
                 $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
                 if ($sent) {
                     $sendHrEmail = true;
@@ -133,12 +139,9 @@ class HrController extends Controller
             }
 
             if ($sendHrEmail) {
-                //COMMENT OUT BEFORE PUSHING INTO PROD
-                // $hrContacts = ['09276569771', '09762930730'];
-                $hrContacts = ['09985980670', '09985980643'];
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
-                foreach ($hrContacts as $contactNum) {
+                foreach ($hrContactsLocal as $contactNum) {
                     $this->SendSMS($contactNum, $smsMessage);
                 }
             }
@@ -282,6 +285,12 @@ class HrController extends Controller
                     ->orWhere('t1.dependent_first_name', 'like', $like)
                     ->orWhere('t1.dependent_last_name', 'like', $like);
             });
+        }
+
+        // restrict results to the HR user's company only
+        $hrUser = request()->user();
+        if ($hrUser && $hrUser->comp_code) {
+            $q->where('t1.company_code', $hrUser->comp_code);
         }
 
         $sortDirection = ($id == 12) ? 'asc' : 'desc';
