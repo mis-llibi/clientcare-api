@@ -56,6 +56,7 @@ class HrController extends Controller
         $hrEmailsLocal = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
         $hrEmailsProd = ['hrd@koolerindustries.com'];
 
+
         $chief_complaint = $request->chiefComplaint;
         $patient_firstname = strtoupper($request->patientFirstName);
         $patient_lastname = strtoupper($request->patientLastName);
@@ -88,7 +89,8 @@ class HrController extends Controller
             'user_id' => $user_id,
             'platform' => "hr-call",
             'email' => $email,
-            'alt_email' => $alt_email
+            'alt_email' => $alt_email,
+            'company_code' => $company->corporate_compcode
 
         ];
 
@@ -288,7 +290,7 @@ class HrController extends Controller
         // restrict results to the HR user's company only
         $hrUser = request()->user();
         if ($hrUser && $hrUser->comp_code) {
-            $q->where('mlist.company_code', $hrUser->comp_code);
+            $q->where('t1.company_code', $hrUser->comp_code);
         }
 
         $sortDirection = ($id == 12) ? 'asc' : 'desc';
