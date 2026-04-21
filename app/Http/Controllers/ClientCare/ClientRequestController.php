@@ -21,6 +21,7 @@ use App\Models\ClientCare\RemainingTbl;
 use App\Models\ClientCare\RemainingTblLogs;
 use App\Models\ClientCare\CompanyComplaintExcluded;
 use App\Models\ClientCare\CompanyV2;
+use App\Models\HrUsers;
 
 use Illuminate\Support\Carbon;
 
@@ -373,15 +374,10 @@ class ClientRequestController extends Controller
             ->where('isHR', 1)
             ->exists();
 
-        if ($isHrCompany) {
-            // Let isAuto HR companies fall through to the auto-LOA block below
-            if (empty($company) || $company->isAuto != 1) {
-                $clientRequest = ClientRequest::where('client_id', $findClientId->id)->first();
-                $clientRequest->update(['loa_status' => 'Pending Approval']);
-                $client->update(['status' => 12]);
-                return response()->json(['isHR' => true], 201);
-            }
-        }
+        // Dynamic HR notification recipients based on company code
+        $hrUsers = HrUsers::where('comp_code', $findPatient->company_code)->get();
+        $hrEmails = $hrUsers->pluck('email')->filter()->values()->toArray();
+        $hrContacts = $hrUsers->pluck('contact_number')->filter()->values()->toArray();
 
         $loa_status = "Pending Approval";
 
@@ -478,9 +474,11 @@ class ClientRequestController extends Controller
 
         if($totalRemaining >= 1 && $isComplaintHasApproved == 1 && $exclusionComplaintChecker == 0){
             if(!empty($company)){
-                //
+                // If the company isAuto = 1 and it's HR, it will update the request then the HR Approval logic will handle the auto LOA generation
                 if($isHrCompany && $company->isAuto == 1) {
                     $complaint = $desktopController->CheckComplaint($request->complaint, $client);
+                    $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
+                    $employee_name = $client->last_name . ", " . $client->first_name;
 
                     $clientRequestData = [
                         'complaint' => $complaint,
@@ -502,11 +500,46 @@ class ClientRequestController extends Controller
                         'provider_remarks' => $provider_remarks ?? null,
                     ]);
 
+                    $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name
+                    : $client->first_name . ' ' . $client->last_name;
+                    $time = "15 - 30";
+
+                    if($client->alt_email){
+                        $this->SendEmailPatient($patientName, $time, $client->reference_number, $client->alt_email);
+                    }
+                    if($client->contact){
+                        $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name
+                                    : $client->first_name . ' ' . $client->last_name;
+                        $sms =
+                        "From Lacson & Lacson:\n\nHi $patientName,\n\nYour request have successfully approved.\n\nYour reference number is $client->reference_number";
+                        $this->SendSMS($client->contact, $sms);
+                    }
+                    $bodyHR = array(
+                        'body' => view('send-hr-notification-request', [
+                            'name' => $patientName,
+                        ]),
+                    );
+                    foreach ($hrEmails as $hrEmail) {
+                        $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
+                        if ($sent) {
+                            $sendHrEmail = true;
+                        }
+                    }
+                    if ($findPatient->company_code === 'KOOLR') {
+                        (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+                    }
+                    if ($sendHrEmail) {
+                        $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.\n\nReference: {$client->reference_number}";
+                        foreach ($hrContacts as $contactNum) {
+                            $this->SendSMS($contactNum, $smsMessage);
+                        }
+                    }
+
                     return response()->json([
                         'is_auto' => true,
                     ], 201);
                 }
-                //
+                // If the company isAuto = 1 but it's not HR, it will directly generate the LOA without waiting for HR Approval
                 else if($company->isAuto == 1){
 
 
@@ -644,7 +677,7 @@ class ClientRequestController extends Controller
                 }
             }
         }
-
+        // If not auto-LOA, it will just update the request and wait for CCE's approval
         $complaint = $desktopController->CheckComplaint($request->complaint, $client);
 
         $clientRequestData = [
@@ -658,7 +691,7 @@ class ClientRequestController extends Controller
 
         $client = Client::where('id', $findClientId->id)->first();
         $clientData = [
-            'status' => 2,
+            'status' => $isHrCompany ? 12 : 2,
             'alt_email' => $email,
             'contact' => $contact,
             'remaining' => !$remaining ? null : $remaining->allow,
@@ -683,18 +716,52 @@ class ClientRequestController extends Controller
 
             $this->SendSMS($client->contact, $sms);
         }
+        
+        // If it's an HR company, it will send notification to HR for approval and also send SMS to HR
+        if ($isHrCompany) {
+            $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
+            $employee_name = $client->last_name . ", " . $client->first_name;
 
-        if($provider->notification_sms){
-            $smsProvider =
-            "This is contact sms from provider";
+            $bodyHR = array(
+                'body' => view('send-hr-notification-request', [
+                    'name' => $patient_name
+                ]),
+            );
+            $sendHrEmail = false;
 
-            $this->SendSMS($provider->notification_sms, $smsProvider);
+            foreach ($hrEmails as $hrEmail) {
+                $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
+                if ($sent) {
+                    $sendHrEmail = true;
+                }
+            }
+
+            if ($findPatient->company_code === 'KOOLR') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+            }
+
+            if ($sendHrEmail) {
+                $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
+
+                foreach ($hrContacts as $contactNum) {
+                    $this->SendSMS($contactNum, $smsMessage);
+                }
+            }
         }
-
-        return response()->json([
-            'isAuto' => false
-        ], 201);
-    }
+            
+            if($provider->notification_sms){
+                $smsProvider =
+                "This is contact sms from provider";
+                
+                $this->SendSMS($provider->notification_sms, $smsProvider);
+                }
+                
+                return response()->json([
+                    'isAuto' => false,
+                    'isHR' => $isHrCompany
+                    ], 201);
+        
+        }
 
     public function submitUpdateRequestLaboratory(Request $request){
         $request->validate([
@@ -741,6 +808,11 @@ class ClientRequestController extends Controller
             ? CompanyV2::where('corporate_compcode', $findPatient->company_code)->where('isHR', 1)->exists()
             : false;
 
+        // Dynamic HR notification recipients based on company code
+        $hrUsers = HrUsers::where('comp_code', $findPatient->company_code)->get();
+        $hrEmails = $hrUsers->pluck('email')->filter()->values()->toArray();
+        $hrContacts = $hrUsers->pluck('contact_number')->filter()->values()->toArray();
+
         $clientData = [
             'status' => $isHrCompany ? 12 : 2,
             'alt_email' => $email,
@@ -763,10 +835,6 @@ class ClientRequestController extends Controller
             }
         }
 
-        if ($isHrCompany) {
-            return response(201);
-        }
-
         $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name : $client->first_name . ' ' . $client->last_name;
         $time = "30 - 45";
 
@@ -784,6 +852,37 @@ class ClientRequestController extends Controller
             $this->SendSMS($client->contact, $sms);
         }
 
+        if ($isHrCompany) {
+            $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
+            $employee_name = $client->last_name . ", " . $client->first_name;
+
+            $bodyHR = array(
+                'body' => view('send-hr-notification-request', [
+                    'name' => $patient_name
+                ]),
+            );
+            $sendHrEmail = false;
+
+            foreach ($hrEmails as $hrEmail) {
+                $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
+                if ($sent) {
+                    $sendHrEmail = true;
+                }
+            }
+
+            if ($findPatient->company_code === 'KOOLR') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+            }
+
+            if ($sendHrEmail) {
+                $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
+
+                foreach ($hrContacts as $contactNum) {
+                    $this->SendSMS($contactNum, $smsMessage);
+                }
+            }
+        }
+
         if($provider->notification_sms){
             $smsProvider =
             "This is contact sms from provider";
@@ -793,7 +892,7 @@ class ClientRequestController extends Controller
 
         return response(201);
 
-
+    
     }
 
     private function SendEmailHospital($provider_name, $time, $ref_no, $email, $patient_name){

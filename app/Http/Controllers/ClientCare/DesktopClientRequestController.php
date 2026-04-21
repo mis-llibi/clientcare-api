@@ -427,7 +427,7 @@ class DesktopClientRequestController extends Controller
 
                         $bodyHR = array(
                             'body' => view('send-hr-notification-request', [
-                                'name' => $patient_name
+                                'name' => $patient_name,
                             ]),
                         );
 
@@ -602,7 +602,7 @@ class DesktopClientRequestController extends Controller
             }
         }
 
-
+        // If the company isAuto = 0, it will just create a normal request and wait for CCE's approval
         $clientData = [
             'request_type' => 1,
             'reference_number' => $ref_no,
@@ -670,6 +670,7 @@ class DesktopClientRequestController extends Controller
             $this->SendSMS($client->contact, $sms);
         }
 
+        // If it's an HR company, it will send notification to HR for approval and also send SMS to HR
         if ($isHrCompany) {
             $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
             $employee_name = $employeeLastName . ", " . $employeeFirstName;
