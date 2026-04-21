@@ -528,6 +528,9 @@ class ClientRequestController extends Controller
                     if ($findPatient->company_code === 'KOOLR') {
                         (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
                     }
+                    if ($findPatient->company_code === 'TEST') {
+                        (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
+                    }
                     if ($sendHrEmail) {
                         $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.\n\nReference: {$client->reference_number}";
                         foreach ($hrContacts as $contactNum) {
@@ -716,7 +719,7 @@ class ClientRequestController extends Controller
 
             $this->SendSMS($client->contact, $sms);
         }
-        
+
         // If it's an HR company, it will send notification to HR for approval and also send SMS to HR
         if ($isHrCompany) {
             $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
@@ -740,6 +743,10 @@ class ClientRequestController extends Controller
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
             }
 
+            if ($findPatient->company_code === 'TEST') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
+            }
+
             if ($sendHrEmail) {
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
@@ -748,19 +755,19 @@ class ClientRequestController extends Controller
                 }
             }
         }
-            
+
             if($provider->notification_sms){
                 $smsProvider =
                 "This is contact sms from provider";
-                
+
                 $this->SendSMS($provider->notification_sms, $smsProvider);
                 }
-                
+
                 return response()->json([
                     'isAuto' => false,
                     'isHR' => $isHrCompany
                     ], 201);
-        
+
         }
 
     public function submitUpdateRequestLaboratory(Request $request){
@@ -874,6 +881,10 @@ class ClientRequestController extends Controller
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
             }
 
+            if ($findPatient->company_code === 'TEST') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
+            }
+
             if ($sendHrEmail) {
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
@@ -892,7 +903,7 @@ class ClientRequestController extends Controller
 
         return response(201);
 
-    
+
     }
 
     private function SendEmailHospital($provider_name, $time, $ref_no, $email, $patient_name){

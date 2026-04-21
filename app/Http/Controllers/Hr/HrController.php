@@ -130,7 +130,15 @@ class HrController extends Controller
                 );
 
                 $sendHrEmail = false;
-                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+
+                if($company->corporate_compcode === 'KOOLR') {
+                    (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+                }
+
+                if($company->corporate_compcode === 'TEST') {
+                    (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
+                }
+
 
                 foreach ($hr as $hrEmail) {
                     $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail->email, $bodyHR);

@@ -442,6 +442,10 @@ class DesktopClientRequestController extends Controller
                             (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
                         }
 
+                        if ($findPatient->company_code === 'TEST') {
+                            (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
+                        }
+
                         if ($sendHrEmail) {
                             $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.\n\nReference: {$client->reference_number}";
                             foreach ($hrContacts as $contactNum) {
@@ -693,6 +697,10 @@ class DesktopClientRequestController extends Controller
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
             }
 
+            if ($findPatient->company_code === 'TEST') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
+            }
+
             if ($sendHrEmail) {
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
@@ -911,6 +919,10 @@ class DesktopClientRequestController extends Controller
 
             if ($findPatient->company_code === 'KOOLR') {
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+            }
+
+            if ($findPatient->company_code === 'TEST') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
             }
 
             if ($sendHrEmail) {
