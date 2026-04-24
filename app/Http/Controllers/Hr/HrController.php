@@ -135,6 +135,10 @@ class HrController extends Controller
                     (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
                 }
 
+                if($company->corporate_compcode === 'HCHNI') {
+                    (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
+                }
+
                 if($company->corporate_compcode === 'TEST') {
                     (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
                 }

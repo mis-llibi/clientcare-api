@@ -528,6 +528,11 @@ class ClientRequestController extends Controller
                     if ($findPatient->company_code === 'KOOLR') {
                         (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
                     }
+
+                    if($company->corporate_compcode === 'HCHNI') {
+                        (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
+                    }
+
                     if ($findPatient->company_code === 'TEST') {
                         (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
                     }
@@ -743,6 +748,10 @@ class ClientRequestController extends Controller
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
             }
 
+            if($company->corporate_compcode === 'HCHNI') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
+            }
+
             if ($findPatient->company_code === 'TEST') {
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
             }
@@ -879,6 +888,10 @@ class ClientRequestController extends Controller
 
             if ($findPatient->company_code === 'KOOLR') {
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+            }
+
+            if($findPatient->corporate_compcode === 'HCHNI') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
             }
 
             if ($findPatient->company_code === 'TEST') {
