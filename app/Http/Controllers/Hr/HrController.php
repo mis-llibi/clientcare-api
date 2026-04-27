@@ -49,13 +49,6 @@ class HrController extends Controller
 
     public function submitForms(Request $request){
 
-        //Contact No for HR Notifications
-        $hrContactsProd = ['09985980670', '09985980643'];
-        $hrContactsLocal = ['09276569771', '09762930730'];
-        //Email for HR Notifications
-        $hrEmailsLocal = ['arwillpolinag@llibi.com', 'jeremiahquintano@llibi.com'];
-        $hrEmailsProd = ['hrd@koolerindustries.com'];
-
         $chief_complaint = $request->chiefComplaint;
         $patient_firstname = strtoupper($request->patientFirstName);
         $patient_lastname = strtoupper($request->patientLastName);
@@ -68,8 +61,15 @@ class HrController extends Controller
         $email = $request->email;
         $alt_email = $request->alt_email;
 
+
         // Ensure we retrieve the company model properly using the passed company_id
         $company = CompanyV2::where('id', $company_id)->first();
+
+        // Get HR Email and contact
+        $hr = HrUsers::where('comp_code', $company->corporate_compcode)->select('email', 'contact_number')->get();
+
+
+
 
         $isHrCompany = false;
         if ($company && $company->isHR == 1) {
@@ -88,7 +88,8 @@ class HrController extends Controller
             'user_id' => $user_id,
             'platform' => "hr-call",
             'email' => $email,
-            'alt_email' => $alt_email
+            'alt_email' => $alt_email,
+            'company_code' => $company->corporate_compcode
 
         ];
 
@@ -108,6 +109,7 @@ class HrController extends Controller
 
 
 
+
         $clientRequestData = [
             'client_id' => $client->id,
             'provider_id' => $provider_id,
@@ -118,31 +120,32 @@ class HrController extends Controller
         ];
 
             if ($isHrCompany) {
-            $patient_name = $patient_lastname . ", " . $patient_firstname;
-            $employee_name = $patient_lastname . ", " . $patient_firstname;
+                $patient_name = $patient_lastname . ", " . $patient_firstname;
+                $employee_name = $patient_lastname . ", " . $patient_firstname;
 
-            $bodyHR = array(
-                'body' => view('send-hr-notification-request', [
-                    'name' => $patient_name
-                ]),
-            );
+                $bodyHR = array(
+                    'body' => view('send-hr-notification-request', [
+                        'name' => $patient_name
+                    ]),
+                );
 
-            $sendHrEmail = false;
+                $sendHrEmail = false;
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
 
-            foreach ($hrEmailsLocal as $hrEmail) {
-                $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail, $bodyHR);
-                if ($sent) {
-                    $sendHrEmail = true;
+                foreach ($hr as $hrEmail) {
+                    $sent = (new NotificationController)->EncryptedPDFMailNotification($employee_name, $hrEmail->email, $bodyHR);
+                    if ($sent) {
+                        $sendHrEmail = true;
+                    }
                 }
-            }
 
-            if ($sendHrEmail) {
-                $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
+                if ($sendHrEmail) {
+                    $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
-                foreach ($hrContactsLocal as $contactNum) {
-                    $this->SendSMS($contactNum, $smsMessage);
+                    foreach ($hr as $contactNum) {
+                        $this->SendSMS($contactNum->contact_number, $smsMessage);
+                    }
                 }
-            }
         }
 
 
@@ -288,7 +291,7 @@ class HrController extends Controller
         // restrict results to the HR user's company only
         $hrUser = request()->user();
         if ($hrUser && $hrUser->comp_code) {
-            $q->where('mlist.company_code', $hrUser->comp_code);
+            $q->where('t1.company_code', $hrUser->comp_code);
         }
 
         $sortDirection = ($id == 12) ? 'asc' : 'desc';
