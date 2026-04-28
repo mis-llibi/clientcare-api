@@ -355,66 +355,65 @@ class DesktopClientRequestController extends Controller
             if (!empty($company)) {
                 // If the company isAuto = 1 and it's HR, it will first create a request then the HR Approval logic will handle the auto LOA generation
                 if ($isHrCompany && $company->isAuto == 1){
-                $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
-                $employee_name = $employeeLastName . ", " . $employeeFirstName;
+                    $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
+                    $employee_name = $employeeLastName . ", " . $employeeFirstName;
+                    $hospital_name = explode('++', $provider_name)[0];
+                    $doctname = explode('++', $doctor_name)[0];
+                    $doctname = $doctname == ", " ? "" : $doctname;
 
-                $hospital_name = explode('++', $provider_name)[0];
-                $doctname = explode('++', $doctor_name)[0];
-                $doctname = $doctname == ", " ? "" : $doctname;
+                    $clientData = [
+                        'request_type' => 1,
+                        'reference_number' => $ref_no,
+                        'email' => $email,
+                        'alt_email' => $alt_email,
+                        'contact' => $contact,
+                        'company_code' => $findPatient->company_code,
+                        'member_id' => $patientType == 'employee' ? $findPatient->member_id : null,
+                        'first_name' => $patientType == "employee" ? $findPatient->first_name : strtoupper($employeeFirstName),
+                        'last_name' => $patientType == "employee" ? $findPatient->last_name : strtoupper($employeeLastName),
+                        'dob' => $patientType == "employee" ? $dob : null,
+                        'is_dependent' => $patientType == "dependent" ? 1 : null,
+                        'dependent_member_id' => $patientType == "dependent" ? $findPatient->member_id : null,
+                        'dependent_first_name' => $patientType == "dependent" ? $findPatient->first_name : null,
+                        'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
+                        'dependent_dob' => $patientType == "dependent" ? $dob : null,
+                        'provider_remarks' => $provider_remarks,
+                        'status' => 12,
+                        'platform' => 'hr',
+                        'provider_email2' => $providerEmail2,
+                        'remaining' => !$remaining ? null : $remaining->allow,
+                    ];
 
-                $clientData = [
-                    'request_type' => 1,
-                    'reference_number' => $ref_no,
-                    'email' => $email,
-                    'alt_email' => $alt_email,
-                    'contact' => $contact,
-                    'company_code' => $findPatient->company_code,
-                    'member_id' => $patientType == 'employee' ? $findPatient->member_id : null,
-                    'first_name' => $patientType == "employee" ? $findPatient->first_name : strtoupper($employeeFirstName),
-                    'last_name' => $patientType == "employee" ? $findPatient->last_name : strtoupper($employeeLastName),
-                    'dob' => $patientType == "employee" ? $dob : null,
-                    'is_dependent' => $patientType == "dependent" ? 1 : null,
-                    'dependent_member_id' => $patientType == "dependent" ? $findPatient->member_id : null,
-                    'dependent_first_name' => $patientType == "dependent" ? $findPatient->first_name : null,
-                    'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
-                    'dependent_dob' => $patientType == "dependent" ? $dob : null,
-                    'provider_remarks' => $provider_remarks,
-                    'status' => 12,
-                    'platform' => 'hr',
-                    'provider_email2' => $providerEmail2,
-                    'remaining' => !$remaining ? null : $remaining->allow,
-                ];
+                    $client = Client::create($clientData);
+                    $complaint = $this->CheckComplaint($request->complaint, $client);
 
-                $client = Client::create($clientData);
-                $complaint = $this->CheckComplaint($request->complaint, $client);
+                    $clientRequestData = [
+                        'client_id' => $client->id,
+                        'member_id' => $findPatient->member_id,
+                        'provider_id' => $provider_id,
+                        'provider' => $provider_name,
+                        'doctor_id' => $doctor_id,
+                        'doctor_name' => $doctor_name,
+                        'loa_type' => $loaType,
+                        'complaint' => $complaint,
+                        'loa_status' => 'Pending Approval',
+                        'is_excluded' => $exclusionComplaintChecker,
+                        'is_auto' => 1,
+                    ];
 
-                $clientRequestData = [
-                    'client_id' => $client->id,
-                    'member_id' => $findPatient->member_id,
-                    'provider_id' => $provider_id,
-                    'provider' => $provider_name,
-                    'doctor_id' => $doctor_id,
-                    'doctor_name' => $doctor_name,
-                    'loa_type' => $loaType,
-                    'complaint' => $complaint,
-                    'loa_status' => 'Pending Approval',
-                    'is_excluded' => $exclusionComplaintChecker,
-                    'is_auto' => 1,
-                ];
+                    $callback = ['client_id' => $client->id, 'failed_count' => 0];
 
-                $callback = ['client_id' => $client->id, 'failed_count' => 0];
+                    ClientRequest::create($clientRequestData);
+                    Callback::create($callback);
 
-                ClientRequest::create($clientRequestData);
-                Callback::create($callback);
+                    $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name
+                    : $client->first_name . ' ' . $client->last_name;
+                    $time = "15 - 30";
 
-                $patientName = $client->is_dependent == 1 ? $client->dependent_first_name . " " . $client->dependent_last_name
-                : $client->first_name . ' ' . $client->last_name;
-                $time = "15 - 30";
-
-                $sendEmail = $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
-                if($client->alt_email){
-                    $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
-                }
+                    $sendEmail = $this->SendEmail($patientName, $time, $client->reference_number, $client->email);
+                    if($client->alt_email){
+                        $this->SendEmail($patientName, $time, $client->reference_number, $client->alt_email);
+                    }
                     if($sendEmail){
 
                         if($client->contact){
@@ -440,6 +439,14 @@ class DesktopClientRequestController extends Controller
 
                         if ($findPatient->company_code === 'KOOLR') {
                             (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+                        }
+
+                        if($findPatient->corporate_compcode === 'HCHNI') {
+                            (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
+                        }
+
+                        if ($findPatient->company_code === 'TEST') {
+                            (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
                         }
 
                         if ($sendHrEmail) {
@@ -693,6 +700,14 @@ class DesktopClientRequestController extends Controller
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
             }
 
+            if($findPatient->corporate_compcode === 'HCHNI') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
+            }
+
+            if ($findPatient->company_code === 'TEST') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
+            }
+
             if ($sendHrEmail) {
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
 
@@ -911,6 +926,14 @@ class DesktopClientRequestController extends Controller
 
             if ($findPatient->company_code === 'KOOLR') {
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+            }
+
+            if($findPatient->corporate_compcode === 'HCHNI') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
+            }
+
+            if ($findPatient->company_code === 'TEST') {
+                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'loaapproval@yopmail.com', $bodyHR);
             }
 
             if ($sendHrEmail) {
