@@ -11,6 +11,8 @@ use App\Http\Controllers\CsvUploaderController;
 use App\Http\Controllers\Hati\MemberValidationController;
 use App\Http\Controllers\Hr\HrController;
 use Vinkla\Hashids\Facades\Hashids;
+use App\Models\ClientCare\PortalUser;
+use Illuminate\Support\Facades\DB;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -104,6 +106,7 @@ Route::get('/encrypt-provider', function () {
         '643' => 'Tooth Works General Dentistry and Orthodontics (FRC, PGRC & WECARE)',
         '18' => 'Makati Medical Center',
         '669' => 'Chong Hua Hospital Mandaue & Cancer Center',
+        '1942' => 'Lacson Hospital Manila'
     ];
 
     $hashedProviders = [];
@@ -158,6 +161,11 @@ Route::post('/submit-hr-patient', [HrController::class, 'submitForms']);
 
 // Hati API
 Route::get("/member-validation", [MemberValidationController::class, 'validateMember'])->middleware('hati_api_key');
+
+Route::get('/cce/{id}', function($id){
+    $user = PortalUser::find($id);
+    return $user->full_name;
+});
 
 
 // Email Preview Route

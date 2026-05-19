@@ -30,6 +30,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+use function PHPSTORM_META\type;
+
 class DesktopClientRequestController extends Controller
 {
     //
@@ -131,6 +133,8 @@ class DesktopClientRequestController extends Controller
         $erCardNumber = $request->erCardNumber;
         $patientFirstName = $request->patientFirstName;
         $patientLastName = $request->patientLastName;
+
+        $cceId = isset($request->cceId) ? $request->cceId : null;
 
         $now = Carbon::now();
 
@@ -509,7 +513,8 @@ class DesktopClientRequestController extends Controller
                         'provider_remarks' => $provider_remarks,
                         'status' => 11,
                         'provider_email2' => $providerEmail2,
-                        'remaining' => !$remaining ? null : $remaining->allow
+                        'remaining' => !$remaining ? null : $remaining->allow,
+                        'platform' => $cceId ? 'cce-request' : null,
                     ];
 
                     $client = Client::create($clientData);
@@ -527,7 +532,8 @@ class DesktopClientRequestController extends Controller
                         'loa_status' => $loa_status,
                         'is_excluded' => $exclusionComplaintChecker,
                         'loa_number' => $loa_number,
-                        'loa_attachment' => env('DO_LLIBI_CDN_ENDPOINT') . '/loa/generated/' . $loa_number
+                        'loa_attachment' => env('DO_LLIBI_CDN_ENDPOINT') . '/loa/generated/' . $loa_number,
+                        'user_id_request' => $cceId,
                     ];
 
                     $callback = [
@@ -627,7 +633,7 @@ class DesktopClientRequestController extends Controller
             'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
             'dependent_dob' => $patientType == "dependent" ? $dob : null,
             'status' => $isHrCompany ? 12 : 2,
-            'platform' => $isHrCompany ? 'hr' : null,
+            'platform' => $isHrCompany ? 'hr' : ($cceId ? 'cce-request' : null),
             'provider_remarks' => $provider_remarks,
             'provider_email2' => $providerEmail2,
             'remaining' => !$remaining ? null : $remaining->allow
@@ -647,7 +653,8 @@ class DesktopClientRequestController extends Controller
             'loa_type' => $loaType,
             'complaint' => $complaint,
             'loa_status' => $loa_status,
-            'is_excluded' => $exclusionComplaintChecker
+            'is_excluded' => $exclusionComplaintChecker,
+            'user_id_request' => $cceId,
         ];
 
         $callback = [
@@ -741,6 +748,8 @@ class DesktopClientRequestController extends Controller
         $patientLastName = $request->patientLastName;
 
         $now = Carbon::now();
+
+        $cceId = $request->cceId != "null" ? $request->cceId : null;
 
         $isWeekday = $now->isWeekday() ? 1 : 0;
 
@@ -854,7 +863,7 @@ class DesktopClientRequestController extends Controller
             'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
             'dependent_dob' => $patientType == "dependent" ? $dob : null,
             'status' => $isHrCompany ? 12 : 2,
-            'platform' => $isHrCompany ? 'hr' : null,
+            'platform' => $isHrCompany ? 'hr' : ($cceId ? 'cce-request' : null),
             'provider_email2' => $providerEmail2
         ];
 
@@ -866,7 +875,8 @@ class DesktopClientRequestController extends Controller
             'provider_id' => $provider_id,
             'provider' => $provider_name,
             'loa_type' => $loaType,
-            'loa_status' => $loa_status
+            'loa_status' => $loa_status,
+            'user_id_request' => $cceId,
         ];
 
         $callback = [
