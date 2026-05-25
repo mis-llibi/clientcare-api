@@ -27,6 +27,8 @@ class ClientRequest extends Model
         'is_auto',
         'hr_user',
         'is_hr',
-        'user_id_request'
+        'user_id_request',
+        'isUpload',
+        'is2in1'
     ];
 }

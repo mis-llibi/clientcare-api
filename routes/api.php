@@ -12,7 +12,7 @@ use App\Http\Controllers\Hati\MemberValidationController;
 use App\Http\Controllers\Hr\HrController;
 use Vinkla\Hashids\Facades\Hashids;
 use App\Models\ClientCare\PortalUser;
-use Illuminate\Support\Facades\DB;
+
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -162,9 +162,34 @@ Route::post('/submit-hr-patient', [HrController::class, 'submitForms']);
 // Hati API
 Route::get("/member-validation", [MemberValidationController::class, 'validateMember'])->middleware('hati_api_key');
 
-Route::get('/cce/{id}', function($id){
-    $user = PortalUser::find($id);
-    return $user->full_name;
+
+Route::get('/cce/{id}', function ($id) {
+    try {
+        $decodedId = Hashids::decode($id);
+
+        if (empty($decodedId)) {
+            return response()->json([
+                'message' => 'Invalid CCE ID.',
+            ], 400);
+        }
+
+        $user = PortalUser::find($decodedId[0]);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'CCE user not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'full_name' => strtoupper($user->full_name),
+        ], 200);
+
+    } catch (\Throwable $e) {
+        return response()->json([
+            'message' => 'Something went wrong while fetching CCE user.',
+        ], 500);
+    }
 });
 
 

@@ -1216,11 +1216,20 @@ class DesktopClientRequestController extends Controller
 
         $isExcluded = false;
 
+        $toothExclusion = ['TOOTHACHE', 'TOOTH EXTRACTION'];
+
         if(isset($complaints)){
             foreach($complaints as $complaint){
 
                 $label = strtoupper($complaint['label']);
                 $labelWords = explode(' ', strtoupper($label));
+
+                if(in_array($label, $toothExclusion)){
+                    $isExcluded = true;
+
+                    return $isExcluded;
+                }
+
 
                 $findExclusion = CompanyComplaintExcluded::where('compcode', $compcode)
                                                         ->whereIn('complaint', $labelWords)
