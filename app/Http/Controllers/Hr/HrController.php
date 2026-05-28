@@ -426,24 +426,30 @@ class HrController extends Controller
             $clientRequestRecord = ClientRequest::where('client_id', $request->id)->first();
 
             // Get the compcode of member
-            // $compcode = Masterlist::where('member_id', $clientRecord->member_id)->first();
+            $compcode = Masterlist::where('member_id', $clientRecord->member_id)->first();
 
-            $findAllHrUsers = HrUsers::where('comp_code', $clientRecord->company_code)->get();
+            if($clientRecord->platform == "hr-call"){
+                $findAllHrUsers = HrUsers::where('comp_code', $clientRecord->company_code)->get();
+            }else{
+                $findAllHrUsers = HrUsers::where('comp_code', $compcode->company_code)->get();
+
+                $memberId = $clientRecord->is_dependent == 1
+                    ? $clientRecord->dependent_member_id
+                    : $clientRecord->member_id;
+
+                $findPatient = Masterlist::where('member_id', $memberId)->first();
+
+                $costcode_companies = ['ARTSA', 'ARTHA', 'AFRYP'];
+                if (in_array($findPatient->company_code, $costcode_companies)) {
+                    $company = CompanyV2::where('prefix_compcode', $findPatient->cost_code)->first();
+                } else {
+                    $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
+                }
+            }
             $hrEmails = $findAllHrUsers->pluck('email')->filter()->values()->toArray();
             $hrContacts = $findAllHrUsers->pluck('contact_number')->filter()->values()->toArray();
 
-            $memberId = $clientRecord->is_dependent == 1
-                ? $clientRecord->dependent_member_id
-                : $clientRecord->member_id;
 
-            $findPatient = Masterlist::where('member_id', $memberId)->first();
-
-            $costcode_companies = ['ARTSA', 'ARTHA', 'AFRYP'];
-            if (in_array($findPatient->company_code, $costcode_companies)) {
-                $company = CompanyV2::where('prefix_compcode', $findPatient->cost_code)->first();
-            } else {
-                $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
-            }
 
             if ($clientRequestRecord->client_id == $request->id && $clientRequestRecord->is_auto == 1) {
                 // Auto-generate LOA — status 11
@@ -530,7 +536,7 @@ class HrController extends Controller
                     'attachment' => $attachment
                 );
 
-                if($clientRecord->company_code != 'KOOLR'){
+                if($compcode->company_code != 'KOOLR'){
                     foreach ($hrEmails as $hrEmail) {
                         $sent = (new NotificationController)->EncryptedPDFMailNotification($patient_name, $hrEmail, $body);
                         if ($sent) {
@@ -539,7 +545,7 @@ class HrController extends Controller
                     }
                 }
 
-                if($clientRecord->company_code == "KOOLR"){
+                if($compcode->company_code == "KOOLR"){
                     (new NotificationController)->EncryptedPDFMailNotification($patient_name, 'hrd@koolerindustries.com', $body);
                 }
 
