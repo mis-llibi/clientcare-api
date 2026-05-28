@@ -131,9 +131,9 @@ class HrController extends Controller
 
                 $sendHrEmail = false;
 
-                if($company->corporate_compcode === 'KOOLR') {
-                    (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
-                }
+                // if($company->corporate_compcode === 'KOOLR') {
+                //     (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+                // }
 
                 if($company->corporate_compcode === 'HCHNI') {
                     (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
@@ -426,9 +426,9 @@ class HrController extends Controller
             $clientRequestRecord = ClientRequest::where('client_id', $request->id)->first();
 
             // Get the compcode of member
-            $compcode = Masterlist::where('member_id', $clientRecord->member_id)->first();
+            // $compcode = Masterlist::where('member_id', $clientRecord->member_id)->first();
 
-            $findAllHrUsers = HrUsers::where('comp_code', $compcode->company_code)->get();
+            $findAllHrUsers = HrUsers::where('comp_code', $clientRecord->company_code)->get();
             $hrEmails = $findAllHrUsers->pluck('email')->filter()->values()->toArray();
             $hrContacts = $findAllHrUsers->pluck('contact_number')->filter()->values()->toArray();
 
@@ -530,14 +530,16 @@ class HrController extends Controller
                     'attachment' => $attachment
                 );
 
-                foreach ($hrEmails as $hrEmail) {
-                    $sent = (new NotificationController)->EncryptedPDFMailNotification($patient_name, $hrEmail, $body);
-                    if ($sent) {
-                        $sendHrEmail = true;
+                if($clientRecord->company_code != 'KOOLR'){
+                    foreach ($hrEmails as $hrEmail) {
+                        $sent = (new NotificationController)->EncryptedPDFMailNotification($patient_name, $hrEmail, $body);
+                        if ($sent) {
+                            $sendHrEmail = true;
+                        }
                     }
                 }
 
-                if($compcode->company_code == "KOOLR"){
+                if($clientRecord->company_code == "KOOLR"){
                     (new NotificationController)->EncryptedPDFMailNotification($patient_name, 'hrd@koolerindustries.com', $body);
                 }
 
