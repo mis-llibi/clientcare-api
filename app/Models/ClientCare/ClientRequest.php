@@ -26,6 +26,9 @@ class ClientRequest extends Model
         'loa_attachment',
         'is_auto',
         'hr_user',
-        'is_hr'
+        'is_hr',
+        'user_id_request',
+        'isUpload',
+        'is2in1'
     ];
 }
