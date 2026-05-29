@@ -29,6 +29,8 @@ class ClientRequest extends Model
         'is_hr',
         'user_id_request',
         'isUpload',
-        'is2in1'
+        'is2in1',
+        'hr_timestamp',
+        'hr_elapsed_time'
     ];
 }

@@ -374,6 +374,8 @@ class HrController extends Controller
         $status = (int)$request->status;
         $update = [];
 
+        $now = Carbon::now();
+
 
         if ($status === 14) {
 
@@ -479,7 +481,10 @@ class HrController extends Controller
                 $loa_number = $result['document_number'];
                 $attachment = $result['attachment'];
 
-                Client::where('id', $request->id)->update([
+
+                $client = Client::where('id', $request->id)->first();
+
+                $client->update([
                     'status' => 11,
                     'approved_date' => Carbon::now(),
                 ]);
@@ -489,7 +494,9 @@ class HrController extends Controller
                     'loa_number' => $loa_number,
                     'loa_attachment' => env('DO_LLIBI_CDN_ENDPOINT') . '/loa/generated/' . $loa_number,
                     'approval_code' => 'HR-APPROVED',
-                    'hr_user' => $user_id
+                    'hr_user' => $user_id,
+                    'hr_timestamp' => $now,
+                    'hr_elapsed_time' => $client->created_at->diffInMinutes($now)
                 ];
 
                 ClientRequest::where('client_id', $request->id)->update($update);
@@ -538,12 +545,11 @@ class HrController extends Controller
 
                 if($compcode->company_code != 'KOOLR'){
                     foreach ($hrEmails as $hrEmail) {
-                        $sent = (new NotificationController)->EncryptedPDFMailNotification($patient_name, $hrEmail, $body);
-                        if ($sent) {
-                            $sendHrEmail = true;
-                        }
+                        (new NotificationController)->EncryptedPDFMailNotification($patient_name, $hrEmail, $body);
+
                     }
                 }
+
 
                 if($compcode->company_code == "KOOLR"){
                     (new NotificationController)->EncryptedPDFMailNotification($patient_name, 'hrd@koolerindustries.com', $body);
@@ -562,11 +568,11 @@ class HrController extends Controller
                     $sms = "From Lacson & Lacson:\n\nHi $patientSmsName,\n\nYour LOA request has been approved. Your LOA Number is $loa_number.\n\nYour reference number is $clientRecord->reference_number";
                     $this->SendSMS($clientRecord->contact, $sms);
 
-                    if($sendHrEmail){
-                        foreach ($hrContacts as $contactNum) {
-                            $this->SendSMS($contactNum, $sms);
-                        }
+
+                    foreach ($hrContacts as $contactNum) {
+                        $this->SendSMS($contactNum, $sms);
                     }
+
                 }
 
 
@@ -585,7 +591,9 @@ class HrController extends Controller
                 $update = [
                     'approval_code' => 'HR-APPROVED',
                     'loa_status' => 'Pending Approval',
-                    'hr_user' => $user_id
+                    'hr_user' => $user_id,
+                    'hr_timestamp' => $now,
+                    'hr_elapsed_time' => $client->created_at->diffInMinutes($now)
                 ];
                 ClientRequest::where('client_id', $request->id)->update($update);
             }
