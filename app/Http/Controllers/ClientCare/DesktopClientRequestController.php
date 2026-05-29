@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Vinkla\Hashids\Facades\Hashids;
 
 use function PHPSTORM_META\type;
 
@@ -134,13 +135,16 @@ class DesktopClientRequestController extends Controller
         $patientFirstName = $request->patientFirstName;
         $patientLastName = $request->patientLastName;
 
-        $cceId = isset($request->cceId) ? $request->cceId : null;
+        $cceId = isset($request->cceId) ? Hashids::decode($request->cceId)[0] : null;
 
         $now = Carbon::now();
 
         $isWeekday = $now->isWeekday() ? 1 : 0;
 
         $ref_no = strtotime("now");
+
+        // this will check if the company isUpload or not
+
 
         if($verificationDetailsType === 'insurance'){
             $findPatient = Masterlist::where('member_id', strtoupper($erCardNumber))
@@ -271,6 +275,21 @@ class DesktopClientRequestController extends Controller
             $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
         }
 
+        // Check also company v2 company_compcode if exist, if exists then the isUpload = false, then if not exists, the isUpload = true
+        $company_compcode_checker = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
+        $isUpload = true;
+        $is2in1 = false;
+        if(isset($company_compcode_checker) || isset($company)){
+            $isUpload = false;
+        }
+
+        if((isset($company) && $company->is2in1) || (isset($company_compcode_checker) && $company_compcode_checker->is2in1)){
+            $is2in1 = true;
+        }
+
+
+
+
         $isHrCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
             ->where('isHR', 1)
             ->exists();
@@ -359,6 +378,7 @@ class DesktopClientRequestController extends Controller
             if (!empty($company)) {
                 // If the company isAuto = 1 and it's HR, it will first create a request then the HR Approval logic will handle the auto LOA generation
                 if ($isHrCompany && $company->isAuto == 1){
+                    // Log::info('isHr company && company_is auto');
                     $patient_name = $findPatient->last_name . ", " . $findPatient->first_name;
                     $employee_name = $employeeLastName . ", " . $employeeFirstName;
                     $hospital_name = explode('++', $provider_name)[0];
@@ -403,6 +423,8 @@ class DesktopClientRequestController extends Controller
                         'loa_status' => 'Pending Approval',
                         'is_excluded' => $exclusionComplaintChecker,
                         'is_auto' => 1,
+                        'isUpload' => $isUpload,
+                        'is2in1' => $is2in1
                     ];
 
                     $callback = ['client_id' => $client->id, 'failed_count' => 0];
@@ -441,9 +463,9 @@ class DesktopClientRequestController extends Controller
                             }
                         }
 
-                        if ($findPatient->company_code === 'KOOLR') {
-                            (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
-                        }
+                        // if ($findPatient->company_code === 'KOOLR') {
+                        //     (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+                        // }
 
                         if($findPatient->corporate_compcode === 'HCHNI') {
                             (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
@@ -455,6 +477,7 @@ class DesktopClientRequestController extends Controller
 
                         if ($sendHrEmail) {
                             $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.\n\nReference: {$client->reference_number}";
+                            $this->SendSMS('09176527739', $smsMessage);
                             foreach ($hrContacts as $contactNum) {
                                 $this->SendSMS($contactNum, $smsMessage);
                             }
@@ -534,6 +557,8 @@ class DesktopClientRequestController extends Controller
                         'loa_number' => $loa_number,
                         'loa_attachment' => env('DO_LLIBI_CDN_ENDPOINT') . '/loa/generated/' . $loa_number,
                         'user_id_request' => $cceId,
+                        'isUpload' => $isUpload,
+                        'is2in1' => $is2in1
                     ];
 
                     $callback = [
@@ -615,6 +640,8 @@ class DesktopClientRequestController extends Controller
             }
         }
 
+        // Log::info('hr company only');
+
         // If the company isAuto = 0, it will just create a normal request and wait for CCE's approval
         $clientData = [
             'request_type' => 1,
@@ -655,6 +682,8 @@ class DesktopClientRequestController extends Controller
             'loa_status' => $loa_status,
             'is_excluded' => $exclusionComplaintChecker,
             'user_id_request' => $cceId,
+            'isUpload' => $isUpload,
+            'is2in1' => $is2in1
         ];
 
         $callback = [
@@ -703,9 +732,9 @@ class DesktopClientRequestController extends Controller
                 }
             }
 
-            if ($findPatient->company_code === 'KOOLR') {
-                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
-            }
+            // if ($findPatient->company_code === 'KOOLR') {
+            //     (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+            // }
 
             if($findPatient->corporate_compcode === 'HCHNI') {
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);
@@ -717,7 +746,7 @@ class DesktopClientRequestController extends Controller
 
             if ($sendHrEmail) {
                 $smsMessage = "From Lacson & Lacson:\n\nHi HR,\n\nMember " . ucwords(strtolower($patient_name)) . " is requesting LOA. Kindly proceed to the LLIBI HR Portal for approval.";
-
+                $this->SendSMS('09176527739', $smsMessage);
                 foreach ($hrContacts as $contactNum) {
                     $this->SendSMS($contactNum, $smsMessage);
                 }
@@ -749,7 +778,8 @@ class DesktopClientRequestController extends Controller
 
         $now = Carbon::now();
 
-        $cceId = $request->cceId != "null" ? $request->cceId : null;
+        $cceId = $request->cceId != "null" ? Hashids::decode($request->cceId)[0] : null;
+
 
         $isWeekday = $now->isWeekday() ? 1 : 0;
 
@@ -1183,7 +1213,7 @@ class DesktopClientRequestController extends Controller
 
         $parameters = array(
             'auth' => array('username' => "root", 'password' => "LACSONSMS"), //Your API KEY
-            'provider' => "SIMNETWORK",
+            'provider' => "SIMNETWORK2",
             'number' => $sms,
             'content' => $message,
           );
