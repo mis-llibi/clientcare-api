@@ -275,6 +275,13 @@ class DesktopClientRequestController extends Controller
             $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
         }
 
+
+        if($company->isSuspend){
+            return response()->json([
+                'message' => "Loa issuance is temporary disabled"
+            ], 404);
+        }
+
         // Check also company v2 company_compcode if exist, if exists then the isUpload = false, then if not exists, the isUpload = true
         $company_compcode_checker = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
         $isUpload = true;
@@ -838,6 +845,20 @@ class DesktopClientRequestController extends Controller
             ], 404);
         }
 
+        $costcode_companies = ['ARTSA', 'ARTHA', 'AFRYP'];
+
+        if(in_array($findPatient->company_code, $costcode_companies)){
+            $company = CompanyV2::where('prefix_compcode', $findPatient->cost_code)->first();
+        }else{
+            $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
+        }
+
+        if($company->isSuspend){
+            return response()->json([
+                'message' => "Loa issuance is temporary disabled"
+            ], 404);
+        }
+
         $isWeekdayCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
             ->where('isWeekday', 1)
             ->exists();
@@ -964,9 +985,9 @@ class DesktopClientRequestController extends Controller
                 }
             }
 
-            if ($findPatient->company_code === 'KOOLR') {
-                (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
-            }
+            // if ($findPatient->company_code === 'KOOLR') {
+            //     (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'hrd@koolerindustries.com', $bodyHR);
+            // }
 
             if($findPatient->corporate_compcode === 'HCHNI') {
                 (new NotificationController)->EncryptedPDFMailNotification($employee_name, 'grace.guevarra@halcyonmarine.com.ph', $bodyHR);

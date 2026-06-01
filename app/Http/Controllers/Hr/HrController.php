@@ -482,9 +482,9 @@ class HrController extends Controller
                 $attachment = $result['attachment'];
 
 
-                $client = Client::where('id', $request->id)->first();
+                $client_id = Client::where('id', $request->id)->first();
 
-                $client->update([
+                $client_id->update([
                     'status' => 11,
                     'approved_date' => Carbon::now(),
                 ]);
@@ -551,9 +551,9 @@ class HrController extends Controller
                 }
 
 
-                if($compcode->company_code == "KOOLR"){
-                    (new NotificationController)->EncryptedPDFMailNotification($patient_name, 'hrd@koolerindustries.com', $body);
-                }
+                // if($compcode->company_code == "KOOLR"){
+                //     (new NotificationController)->EncryptedPDFMailNotification($patient_name, 'hrd@koolerindustries.com', $body);
+                // }
 
                 (new NotificationController)->EncryptedPDFMailNotification($patient_name, $clientRecord->email, $body);
 
@@ -583,17 +583,20 @@ class HrController extends Controller
 
             } else {
                 // isAuto = 0 — status 13 (pending client care manual handling)
-                Client::where('id', $request->id)->update([
-                    'status' => 13,
-                    // 'user_id' => $user_id,
+                $client_id = Client::where('id', $request->id)->first();
+                $client_id->update([
+                    'status' => 13
                 ]);
+
+                $client = $this->SearchRequest(0, ['val' => $request->id]);
+                Log::info($client);
 
                 $update = [
                     'approval_code' => 'HR-APPROVED',
                     'loa_status' => 'Pending Approval',
                     'hr_user' => $user_id,
                     'hr_timestamp' => $now,
-                    'hr_elapsed_time' => $client->created_at->diffInMinutes($now)
+                    'hr_elapsed_time' => $client_id->created_at->diffInMinutes($now)
                 ];
                 ClientRequest::where('client_id', $request->id)->update($update);
             }

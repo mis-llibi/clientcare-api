@@ -156,6 +156,20 @@ class ClientRequestController extends Controller
             ], 404);
         }
 
+        $costcode_companies = ['ARTSA', 'ARTHA', 'AFRYP'];
+
+        if(in_array($findPatient->company_code, $costcode_companies)){
+            $company = CompanyV2::where('prefix_compcode', $findPatient->cost_code)->first();
+        }else{
+            $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
+        }
+
+        if($company->isSuspend){
+            return response()->json([
+                'message' => "Loa issuance is temporary disabled"
+            ], 404);
+        }
+
         $isWeekdayCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
             ->where('isWeekday', 1)
             ->exists();
