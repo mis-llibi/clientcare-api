@@ -276,11 +276,17 @@ class DesktopClientRequestController extends Controller
         }
 
 
-        if($company->isSuspend){
-            return response()->json([
-                'message' => "Loa issuance is temporary disabled"
-            ], 404);
+
+        $isSuspendend = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
+
+        if($isSuspendend){
+            if($isSuspendend->isSuspend){
+                return response()->json([
+                    'message' => "Loa issuance is temporary disabled"
+                ], 404);
+            }
         }
+
 
         // Check also company v2 company_compcode if exist, if exists then the isUpload = false, then if not exists, the isUpload = true
         $company_compcode_checker = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
@@ -853,10 +859,14 @@ class DesktopClientRequestController extends Controller
             $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
         }
 
-        if($company->isSuspend){
-            return response()->json([
-                'message' => "Loa issuance is temporary disabled"
-            ], 404);
+        $isSuspendend = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
+
+        if($isSuspendend){
+            if($isSuspendend->isSuspend){
+                return response()->json([
+                    'message' => "Loa issuance is temporary disabled"
+                ], 404);
+            }
         }
 
         $isWeekdayCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
