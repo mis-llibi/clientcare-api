@@ -496,7 +496,7 @@ class HrController extends Controller
                     'approval_code' => 'HR-APPROVED',
                     'hr_user' => $user_id,
                     'hr_timestamp' => $now,
-                    'hr_elapsed_time' => $client->created_at->diffInMinutes($now)
+                    'hr_elapsed_time' => $client_id->created_at->diffInMinutes($now)
                 ];
 
                 ClientRequest::where('client_id', $request->id)->update($update);
