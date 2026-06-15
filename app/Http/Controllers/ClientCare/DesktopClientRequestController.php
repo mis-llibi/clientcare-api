@@ -282,7 +282,7 @@ class DesktopClientRequestController extends Controller
         if($isSuspendend){
             if($isSuspendend->isSuspend){
                 return response()->json([
-                    'message' => "Loa issuance is temporary disabled"
+                    'message' => "Your account is currently on hold, access to Client Care Portal is temporarily unavailable."
                 ], 404);
             }
         }
@@ -856,7 +856,7 @@ class DesktopClientRequestController extends Controller
         if($isSuspendend){
             if($isSuspendend->isSuspend){
                 return response()->json([
-                    'message' => "Loa issuance is temporary disabled"
+                    'message' => "Your account is currently on hold, access to Client Care Portal is temporarily unavailable."
                 ], 404);
             }
         }
