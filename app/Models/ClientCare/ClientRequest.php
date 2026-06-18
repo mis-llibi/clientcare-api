@@ -33,4 +33,9 @@ class ClientRequest extends Model
         'hr_timestamp',
         'hr_elapsed_time'
     ];
+
+    public function masterlist(){
+        return $this->hasOne(Masterlist::class, 'member_id', 'member_id');
+    }
+
 }

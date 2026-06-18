@@ -9,4 +9,9 @@ class Masterlist extends Model
     //
     protected $connection = 'sync_db';
     protected $table = 'masterlist';
+
+    public function masterlist()
+    {
+        return $this->belongsTo(Masterlist::class, 'member_id', 'member_id');
+    }
 }

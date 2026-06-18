@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClientCare\ClientRequestController;
 use App\Http\Controllers\ClientCare\DesktopClientRequestController;
 use App\Http\Controllers\ClientCare\ErrorLogsController;
+use App\Http\Controllers\ClientCare\ReferenceTrackerController;
 use App\Http\Controllers\CsvUploaderController;
 use App\Http\Controllers\Hati\MemberValidationController;
 use App\Http\Controllers\Hr\HrController;
@@ -135,6 +136,9 @@ Route::post('/submit-request-laboratory', [DesktopClientRequestController::class
 Route::get('/search-complaint', [DesktopClientRequestController::class, 'searchComplaint']);
 Route::post('/validate-reimbursement', [DesktopClientRequestController::class, 'validateReimbursement']);
 Route::post('/submit-followup-request', [DesktopClientRequestController::class, 'submitFollowUpRequest']);
+
+// Reference Tracker
+Route::post('/reference-tracker', [ReferenceTrackerController::class, 'referenceTracker']);
 
 // Error logs
 Route::post('/error-logs', [ErrorLogsController::class, 'UpdateErrorLog']);
