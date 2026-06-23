@@ -427,17 +427,18 @@ class HrController extends Controller
             $clientRecord = Client::where('id', $request->id)->first();
             $clientRequestRecord = ClientRequest::where('client_id', $request->id)->first();
 
+            $memberId = $clientRecord->is_dependent == 1
+                ? $clientRecord->dependent_member_id
+                : $clientRecord->member_id;
             // Get the compcode of member
-            $compcode = Masterlist::where('member_id', $clientRecord->member_id)->first();
+            $compcode = Masterlist::where('member_id', $memberId)->first();
 
             if($clientRecord->platform == "hr-call"){
                 $findAllHrUsers = HrUsers::where('comp_code', $clientRecord->company_code)->get();
             }else{
                 $findAllHrUsers = HrUsers::where('comp_code', $compcode->company_code)->get();
 
-                $memberId = $clientRecord->is_dependent == 1
-                    ? $clientRecord->dependent_member_id
-                    : $clientRecord->member_id;
+
 
                 $findPatient = Masterlist::where('member_id', $memberId)->first();
 
