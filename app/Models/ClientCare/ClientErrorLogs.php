@@ -29,6 +29,7 @@ class ClientErrorLogs extends Model
         'fullname',
         'deps_fullname',
         'is_allow_to_call',
-        'notify_status'
+        'notify_status',
+        'platform_value'
     ];
 }

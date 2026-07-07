@@ -137,6 +137,27 @@ class DesktopClientRequestController extends Controller
 
         $cceId = isset($request->cceId) ? Hashids::decode($request->cceId)[0] : null;
 
+        $platform = $request->platform;
+
+        $allowed_platform = ['viber', 'onsite-admum', 'onsite-petrn', 'onsite-spc', 'onsite-mitsu', 'onsite-pswri'];
+
+        $allowed_platform_company = [
+            'admum' => ['ADMUM', 'ADMUP', 'ADMUS', 'AMPC'],
+            'petrn' => ['PETRN'],
+            'spc' => ['SPC', 'SAACP', 'SAJMR', 'SSADI', 'SDMSC', 'SPSC'],
+            'mitsu' => ['MITSU'],
+            'pswri' => ['PSWRI', 'PSWRD'],
+        ];
+
+        $platform_company_name = [
+            'admum' => 'Ateneo De Manila University',
+            'petrn' => 'Petron Corporate',
+            'spc' => 'Sumifru Corporation',
+            'mitsu' => 'Mitsubishi Motors',
+            'pswri' => 'Philippine Spring Water Resources'
+        ];
+
+
         $now = Carbon::now();
 
         $isWeekday = $now->isWeekday() ? 1 : 0;
@@ -158,22 +179,54 @@ class DesktopClientRequestController extends Controller
         }
 
 
+        $errorData = [
+            'dependent_dob' => $patientType == "dependent" ? $dob : null,
+            'dependent_first_name' => $patientType == "dependent" ? $patientFirstName : null,
+            'dependent_last_name' => $patientType == "dependent" ? $patientLastName : null,
+            'dependent_member_id' => $patientType == "dependent" ? $erCardNumber : null,
+            'dob' => $patientType == "employee" ? $dob : null,
+            'first_name' => $patientType == "employee" ? $patientFirstName : strtoupper($employeeFirstName),
+            'is_dependent' => $patientType == "dependent" ? 1 : null,
+            'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
+            'member_id' => $patientType == 'employee' ? $erCardNumber : null,
+            'provider_remarks' => $provider_remarks,
+            'request_type' => 1
+        ];
+
+        // Check if the param platform is allowed
+        if($platform){
+            if(!in_array($platform, $allowed_platform)){
+
+                $platform = [
+                    'platform_value' => $platform
+                ];
+
+                $errorData = array_merge($errorData, $platform);
+
+                ClientErrorLogs::create($errorData);
+                return response()->json([
+                    'message' => "Invalid platform"
+                ], 404);
+            }
+
+            if($platform !== 'viber'){
+                $company_code = explode('-', $platform)[1];
+
+                if(!in_array($findPatient->company_code, $allowed_platform_company[$company_code])){
+
+                    $company_name = $platform_company_name[$company_code];
+                    return response()->json([
+                        'message' => "LOA issuance for this system is limited to $company_name members"
+                    ], 404);
+                }
+
+
+            }
+        }
+
+
         // Validate if we find the patient
         if(!$findPatient){
-
-            $errorData = [
-                'dependent_dob' => $patientType == "dependent" ? $dob : null,
-                'dependent_first_name' => $patientType == "dependent" ? $patientFirstName : null,
-                'dependent_last_name' => $patientType == "dependent" ? $patientLastName : null,
-                'dependent_member_id' => $patientType == "dependent" ? $erCardNumber : null,
-                'dob' => $patientType == "employee" ? $dob : null,
-                'first_name' => $patientType == "employee" ? $patientFirstName : strtoupper($employeeFirstName),
-                'is_dependent' => $patientType == "dependent" ? 1 : null,
-                'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
-                'member_id' => $patientType == 'employee' ? $erCardNumber : null,
-                'provider_remarks' => $provider_remarks,
-                'request_type' => 1
-            ];
 
             $error_data = ClientErrorLogs::create($errorData);
 
@@ -550,7 +603,7 @@ class DesktopClientRequestController extends Controller
                         'status' => 11,
                         'provider_email2' => $providerEmail2,
                         'remaining' => !$remaining ? null : $remaining->allow,
-                        'platform' => $cceId ? 'cce-request' : null,
+                        'platform' => $cceId ? 'cce-request' : ($platform ? $platform : null),
                     ];
 
                     $client = Client::create($clientData);
@@ -673,7 +726,7 @@ class DesktopClientRequestController extends Controller
             'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
             'dependent_dob' => $patientType == "dependent" ? $dob : null,
             'status' => $isHrCompany ? 12 : 2,
-            'platform' => $isHrCompany ? 'hr' : ($cceId ? 'cce-request' : null),
+            'platform' => $isHrCompany ? 'hr' : ($cceId ? 'cce-request' : ($platform ? $platform : null)),
             'provider_remarks' => $provider_remarks,
             'provider_email2' => $providerEmail2,
             'remaining' => !$remaining ? null : $remaining->allow
@@ -793,6 +846,26 @@ class DesktopClientRequestController extends Controller
 
         $cceId = $request->cceId != "null" ? Hashids::decode($request->cceId)[0] : null;
 
+        $platform = $request->platform;
+
+        $allowed_platform = ['viber', 'onsite-admum', 'onsite-petrn', 'onsite-spc', 'onsite-mitsu', 'onsite-pswri'];
+
+        $allowed_platform_company = [
+            'admum' => ['ADMUM', 'ADMUP', 'ADMUS', 'AMPC'],
+            'petrn' => ['PETRN'],
+            'spc' => ['SPC', 'SAACP', 'SAJMR', 'SSADI', 'SDMSC', 'SPSC'],
+            'mitsu' => ['MITSU'],
+            'pswri' => ['PSWRI', 'PSWRD'],
+        ];
+
+        $platform_company_name = [
+            'admum' => 'Ateneo De Manila University',
+            'petrn' => 'Petron Corporate',
+            'spc' => 'Sumifru Corporation',
+            'mitsu' => 'Mitsubishi Motors',
+            'pswri' => 'Philippine Spring Water Resources'
+        ];
+
 
         $isWeekday = $now->isWeekday() ? 1 : 0;
 
@@ -807,22 +880,52 @@ class DesktopClientRequestController extends Controller
                                     ->first();
         }
 
+        $errorData = [
+            'dependent_dob' => $patientType == "dependent" ? $dob : null,
+            'dependent_first_name' => $patientType == "dependent" ? $patientFirstName : null,
+            'dependent_last_name' => $patientType == "dependent" ? $patientLastName : null,
+            'dependent_member_id' => $patientType == "dependent" ? $erCardNumber : null,
+            'dob' => $patientType == "employee" ? $dob : null,
+            'first_name' => $patientType == "employee" ? $patientFirstName : strtoupper($employeeFirstName),
+            'is_dependent' => $patientType == "dependent" ? 1 : null,
+            'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
+            'member_id' => $patientType == 'employee' ? $erCardNumber : null,
+            'request_type' => 1
+        ];
+
+        // Check if the param platform is allowed
+        if($platform){
+            if(!in_array($platform, $allowed_platform)){
+
+                $platform = [
+                    'platform_value' => $platform
+                ];
+                $errorData = array_merge($errorData, $platform);
+                ClientErrorLogs::create($errorData);
+
+                return response()->json([
+                    'message' => "Invalid platform"
+                ], 404);
+            }
+
+            if($platform !== 'viber'){
+                $company_code = explode('-', $platform)[1];
+
+                if(!in_array($findPatient->company_code, $allowed_platform_company[$company_code])){
+
+                    $company_name = $platform_company_name[$company_code];
+                    return response()->json([
+                        'message' => "LOA issuance for this system is limited to $company_name members"
+                    ], 404);
+                }
+
+
+            }
+        }
+
 
         // Validate if we find the patient
         if(!$findPatient){
-
-            $errorData = [
-                'dependent_dob' => $patientType == "dependent" ? $dob : null,
-                'dependent_first_name' => $patientType == "dependent" ? $patientFirstName : null,
-                'dependent_last_name' => $patientType == "dependent" ? $patientLastName : null,
-                'dependent_member_id' => $patientType == "dependent" ? $erCardNumber : null,
-                'dob' => $patientType == "employee" ? $dob : null,
-                'first_name' => $patientType == "employee" ? $patientFirstName : strtoupper($employeeFirstName),
-                'is_dependent' => $patientType == "dependent" ? 1 : null,
-                'last_name' => $patientType == "employee" ? $patientLastName : strtoupper($employeeLastName),
-                'member_id' => $patientType == 'employee' ? $erCardNumber : null,
-                'request_type' => 1
-            ];
 
             $error_data = ClientErrorLogs::create($errorData);
 
@@ -916,7 +1019,7 @@ class DesktopClientRequestController extends Controller
             'dependent_last_name' => $patientType == "dependent" ? $findPatient->last_name : null,
             'dependent_dob' => $patientType == "dependent" ? $dob : null,
             'status' => $isHrCompany ? 12 : 2,
-            'platform' => $isHrCompany ? 'hr' : ($cceId ? 'cce-request' : null),
+            'platform' => $isHrCompany ? 'hr' : ($cceId ? 'cce-request' : ($platform ? $platform : null)),
             'provider_email2' => $providerEmail2
         ];
 
