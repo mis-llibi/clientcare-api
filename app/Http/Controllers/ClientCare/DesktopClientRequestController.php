@@ -137,7 +137,7 @@ class DesktopClientRequestController extends Controller
 
         $cceId = isset($request->cceId) ? Hashids::decode($request->cceId)[0] : null;
 
-        $platform = $request->platform;
+        $platform = $request->input('platform');
 
         $allowed_platform = ['viber', 'onsite-admum', 'onsite-petrn', 'onsite-spc', 'onsite-mitsu', 'onsite-pswri'];
 
@@ -194,7 +194,7 @@ class DesktopClientRequestController extends Controller
         ];
 
         // Check if the param platform is allowed
-        if($platform){
+        if(isset($platform)){
             if(!in_array($platform, $allowed_platform)){
 
                 $platform = [
@@ -846,7 +846,7 @@ class DesktopClientRequestController extends Controller
 
         $cceId = $request->cceId != "null" ? Hashids::decode($request->cceId)[0] : null;
 
-        $platform = $request->platform;
+        $platform = $request->input('platform', null);
 
         $allowed_platform = ['viber', 'onsite-admum', 'onsite-petrn', 'onsite-spc', 'onsite-mitsu', 'onsite-pswri'];
 
@@ -894,15 +894,16 @@ class DesktopClientRequestController extends Controller
         ];
 
         // Check if the param platform is allowed
-        if($platform){
+        if(isset($platform)){
             if(!in_array($platform, $allowed_platform)){
 
                 $platform = [
                     'platform_value' => $platform
                 ];
-                $errorData = array_merge($errorData, $platform);
-                ClientErrorLogs::create($errorData);
 
+                $errorData = array_merge($errorData, $platform);
+
+                ClientErrorLogs::create($errorData);
                 return response()->json([
                     'message' => "Invalid platform"
                 ], 404);
