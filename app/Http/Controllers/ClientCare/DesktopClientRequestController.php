@@ -328,6 +328,13 @@ class DesktopClientRequestController extends Controller
             $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
         }
 
+        // Consultation temporary hold
+        if($company->prefix_compcode == "PETRN"){
+            return response()->json([
+                'message' => 'Temporarily onhold, please consult with your HR.'
+            ], 404);
+        }
+
 
 
         $isSuspendend = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();

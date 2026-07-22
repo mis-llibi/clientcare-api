@@ -113,6 +113,21 @@ class ClientRequestController extends Controller
                                     ->first();
         }
 
+        $costcode_companies = ['ARTSA', 'ARTHA', 'AFRYP'];
+
+        if(in_array($findPatient->company_code, $costcode_companies)){
+            $company = CompanyV2::where('prefix_compcode', $findPatient->cost_code)->first();
+        }else{
+            $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
+        }
+
+        // Consultation temporary hold
+        if($company->prefix_compcode == "PETRN" && $loa_type == "consultation"){
+            return response()->json([
+                'message' => 'Temporarily onhold, please consult with your HR.'
+            ], 404);
+        }
+
         // Validate if we find the patient
         if(!$findPatient){
 
