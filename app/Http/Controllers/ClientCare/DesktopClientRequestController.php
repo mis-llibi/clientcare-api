@@ -329,7 +329,7 @@ class DesktopClientRequestController extends Controller
         }
 
         // Consultation temporary hold
-        if($company->prefix_compcode == "PETRN"){
+        if($company->isConsultationonhold){
             return response()->json([
                 'message' => 'Temporarily onhold, please consult with your HR.'
             ], 404);
@@ -959,6 +959,21 @@ class DesktopClientRequestController extends Controller
         if($now->greaterThan($findPatient->incepto)){
             return response()->json([
                 'message' => "Your policy has already expired"
+            ], 404);
+        }
+
+        $costcode_companies = ['ARTSA', 'ARTHA', 'AFRYP'];
+
+        if(in_array($findPatient->company_code, $costcode_companies)){
+            $company = CompanyV2::where('prefix_compcode', $findPatient->cost_code)->first();
+        }else{
+            $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
+        }
+
+        // Consultation temporary hold
+        if($company->isLaboratoryonhold){
+            return response()->json([
+                'message' => 'Temporarily onhold, please consult with your HR.'
             ], 404);
         }
 

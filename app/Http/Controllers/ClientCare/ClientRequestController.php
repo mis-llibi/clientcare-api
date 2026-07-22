@@ -122,7 +122,7 @@ class ClientRequestController extends Controller
         }
 
         // Consultation temporary hold
-        if($company->prefix_compcode == "PETRN" && $loa_type == "consultation"){
+        if(($company->isConsultationonhold && $loa_type == "consultation") || ($company->isLaboratoryonhold && $loa_type == "laboratory") ){
             return response()->json([
                 'message' => 'Temporarily onhold, please consult with your HR.'
             ], 404);
