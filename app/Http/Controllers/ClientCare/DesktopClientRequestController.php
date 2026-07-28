@@ -328,7 +328,9 @@ class DesktopClientRequestController extends Controller
             $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
         }
 
-        $compcode = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
+        $compcode = CompanyV2::where('corporate_compcode', $findPatient->company_code)
+                            ->orWhere('prefix_compcode', $findPatient->company_code)
+                            ->first();
 
         // Consultation temporary hold
         if($compcode && $compcode->isConsultationonhold){
@@ -961,7 +963,9 @@ class DesktopClientRequestController extends Controller
             ], 404);
         }
 
-        $compcode = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
+        $compcode = CompanyV2::where('corporate_compcode', $findPatient->company_code)
+                            ->orWhere('prefix_compcode', $findPatient->company_code)
+                            ->first();
 
         if($compcode && $compcode->isLaboratoryonhold){
             return response()->json([
