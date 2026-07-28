@@ -305,7 +305,7 @@ class DesktopClientRequestController extends Controller
 
             if($hospitalExclusion){
                 return response()->json([
-                    'message' => "$provider_name_exclusion is excluded from your policy"
+                    'message' => "$provider_name_exclusion is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries."
                 ], 404);
             }
 
@@ -994,7 +994,40 @@ class DesktopClientRequestController extends Controller
             $provider_id = $hospital[0];
             $provider_name = $hospital[1];
 
+            $provider_exclusion = explode('++', $provider_name);
+            $provider_name_exclusion = $provider_exclusion[0];
+
             $loa_status = "Pending Approval";
+
+            // Find Hospcode in sync
+            $hospcode = Hospital::where('id', $provider_id)
+                                ->where('status', 1)
+                                ->first();
+
+            // Check hospital exclusion
+            if(!empty($provider)){
+                if (is_null($hospcode->hosp_code)) {
+                    $hospitalExclusion = false;
+                } else {
+                    $hospitalExclusion = CompanyComplaintExcluded::where('compcode', $findPatient->company_code)
+                                        ->where('hospcode', $hospcode->hosp_code)
+                                        ->exists();
+                }
+
+            // It supposed to be not null
+
+            if($hospitalExclusion){
+                return response()->json([
+                    'message' => "$provider_name_exclusion is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries."
+                ], 404);
+            }
+
+
+            }else{
+                return response()->json([
+                    'message' => "Provider is inactive"
+                ], 404);
+            }
 
 
 

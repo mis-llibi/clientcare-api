@@ -217,7 +217,7 @@ class ClientRequestController extends Controller
         // It supposed to be not null
         if($hospitalExclusion){
             return response()->json([
-                'message' => "$provider->name is excluded from your policy"
+                'message' => "$provider->name is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries."
             ], 404);
         }
 
