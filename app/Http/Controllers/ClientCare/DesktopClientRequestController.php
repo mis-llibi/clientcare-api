@@ -328,19 +328,18 @@ class DesktopClientRequestController extends Controller
             $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
         }
 
+        $compcode = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
+
         // Consultation temporary hold
-        if($company->isConsultationonhold){
+        if($compcode->isConsultationonhold){
             return response()->json([
                 'message' => 'Temporarily onhold, please consult with your HR.'
             ], 404);
         }
 
 
-
-        $isSuspendend = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
-
-        if($isSuspendend){
-            if($isSuspendend->isSuspend){
+        if($compcode){
+            if($compcode->isSuspend){
                 return response()->json([
                     'message' => "Your account is currently on hold, access to Client Care Portal is temporarily unavailable."
                 ], 404);
@@ -962,25 +961,16 @@ class DesktopClientRequestController extends Controller
             ], 404);
         }
 
-        $costcode_companies = ['ARTSA', 'ARTHA', 'AFRYP'];
+        $compcode = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
 
-        if(in_array($findPatient->company_code, $costcode_companies)){
-            $company = CompanyV2::where('prefix_compcode', $findPatient->cost_code)->first();
-        }else{
-            $company = CompanyV2::where('prefix_compcode', $findPatient->company_code)->first();
-        }
-
-        // Consultation temporary hold
-        if($company->isLaboratoryonhold){
+        if($compcode->isLaboratoryonhold){
             return response()->json([
                 'message' => 'Temporarily onhold, please consult with your HR.'
             ], 404);
         }
 
-        $isSuspendend = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
-
-        if($isSuspendend){
-            if($isSuspendend->isSuspend){
+        if($compcode){
+            if($compcode->isSuspend){
                 return response()->json([
                     'message' => "Your account is currently on hold, access to Client Care Portal is temporarily unavailable."
                 ], 404);
