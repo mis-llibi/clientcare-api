@@ -331,7 +331,7 @@ class DesktopClientRequestController extends Controller
         $compcode = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
 
         // Consultation temporary hold
-        if($compcode->isConsultationonhold){
+        if($compcode && $compcode->isConsultationonhold){
             return response()->json([
                 'message' => 'Temporarily onhold, please consult with your HR.'
             ], 404);
@@ -963,7 +963,7 @@ class DesktopClientRequestController extends Controller
 
         $compcode = CompanyV2::where('corporate_compcode', $findPatient->company_code)->first();
 
-        if($compcode->isLaboratoryonhold){
+        if($compcode && $compcode->isLaboratoryonhold){
             return response()->json([
                 'message' => 'Temporarily onhold, please consult with your HR.'
             ], 404);
