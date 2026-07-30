@@ -203,12 +203,27 @@ class ClientRequestController extends Controller
 
         // Check hospital exclusion
         if(!empty($provider)){
-            if (is_null($provider->hosp_code)) {
-                $hospitalExclusion = false;
-            } else {
+            if (!is_null($provider->hosp_code)) {
                 $hospitalExclusion = CompanyComplaintExcluded::where('compcode', $findPatient->company_code)
                                     ->where('hospcode', $provider->hosp_code)
-                                    ->exists();
+                                    ->first();
+                if(isset($hospitalExclusion->plan)){
+                    $plan = explode(',', $hospitalExclusion->plan);
+                    if(in_array($findPatient->plan, $plan) && isset($findPatient->plan)){
+                        return response()->json([
+                            'message' => "$provider->name is excluded from your policy."
+                        ], 404);
+                    }
+                }elseif(!empty($hospitalExclusion)){
+                    if($findPatient->company_code == "PETRN"){
+                        return response()->json([
+                            'message' => "$provider->name is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries"
+                        ], 404);
+                    }
+                    return response()->json([
+                        'message' => "$provider->name is excluded from your policy."
+                    ], 404);
+                }
             }
         }else{
             return response()->json([
@@ -216,12 +231,6 @@ class ClientRequestController extends Controller
             ], 404);
         }
 
-        // It supposed to be not null
-        if($hospitalExclusion){
-            return response()->json([
-                'message' => "$provider->name is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries."
-            ], 404);
-        }
 
         $isHrCompany = CompanyV2::where('corporate_compcode', $findPatient->company_code)
             ->where('isHR', 1)

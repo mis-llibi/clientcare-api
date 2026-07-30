@@ -288,12 +288,31 @@ class DesktopClientRequestController extends Controller
                                 ->first();
             // Check hospital exclusion
             if(!empty($provider)){
-                if (is_null($hospcode->hosp_code)) {
-                    $hospitalExclusion = false;
-                } else {
+                if (!is_null($hospcode->hosp_code)) {
                     $hospitalExclusion = CompanyComplaintExcluded::where('compcode', $findPatient->company_code)
                                         ->where('hospcode', $hospcode->hosp_code)
-                                        ->exists();
+                                        ->first();
+
+                    if(isset($hospitalExclusion->plan)){
+
+                        $plan = explode(',', $hospitalExclusion->plan);
+                        if(in_array($findPatient->plan, $plan) && isset($findPatient->plan)){
+                            return response()->json([
+                                'message' => "$provider_name_exclusion is excluded from your policy."
+                            ], 404);
+                        }
+                    }elseif(!empty($hospitalExclusion)){
+                        if($findPatient->company_code == "PETRN"){
+                            return response()->json([
+                                'message' => "$provider_name_exclusion is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries"
+                            ], 404);
+                        }
+                        return response()->json([
+                            'message' => "$provider_name_exclusion is excluded from your policy."
+                        ], 404);
+                    }
+
+
                 }
             }else{
                 return response()->json([
@@ -303,11 +322,7 @@ class DesktopClientRequestController extends Controller
 
             // It supposed to be not null
 
-            if($hospitalExclusion){
-                return response()->json([
-                    'message' => "$provider_name_exclusion is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries."
-                ], 404);
-            }
+
 
 
         }else{
@@ -1010,23 +1025,32 @@ class DesktopClientRequestController extends Controller
 
             // Check hospital exclusion
             if(!empty($provider)){
-                if (is_null($hospcode->hosp_code)) {
-                    $hospitalExclusion = false;
-                } else {
+                if (!is_null($hospcode->hosp_code)) {
                     $hospitalExclusion = CompanyComplaintExcluded::where('compcode', $findPatient->company_code)
                                         ->where('hospcode', $hospcode->hosp_code)
-                                        ->exists();
+                                        ->first();
+
+                    if(isset($hospitalExclusion->plan)){
+
+                        $plan = explode(',', $hospitalExclusion->plan);
+                        if(in_array($findPatient->plan, $plan) && isset($findPatient->plan)){
+                            return response()->json([
+                                'message' => "$provider_name_exclusion is excluded from your policy."
+                            ], 404);
+                        }
+                    }elseif(!empty($hospitalExclusion)){
+                        if($findPatient->company_code == "PETRN"){
+                            return response()->json([
+                                'message' => "$provider_name_exclusion is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries"
+                            ], 404);
+                        }
+                        return response()->json([
+                            'message' => "$provider_name_exclusion is excluded from your policy."
+                        ], 404);
+                    }
+
+
                 }
-
-            // It supposed to be not null
-
-            if($hospitalExclusion){
-                return response()->json([
-                    'message' => "$provider_name_exclusion is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries."
-                ], 404);
-            }
-
-
             }else{
                 return response()->json([
                     'message' => "Provider is inactive"
