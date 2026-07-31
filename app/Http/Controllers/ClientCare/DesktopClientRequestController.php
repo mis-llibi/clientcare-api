@@ -225,6 +225,10 @@ class DesktopClientRequestController extends Controller
         }
 
 
+        $today = Carbon::today();
+        $incepto = Carbon::parse($findPatient->incepto)->startOfDay();
+
+
         // Validate if we find the patient
         if(!$findPatient){
 
@@ -249,9 +253,9 @@ class DesktopClientRequestController extends Controller
             ], 404);
         }
 
-        if($now->greaterThan($findPatient->incepto)){
+        if ($today->greaterThan($incepto)) {
             return response()->json([
-                'message' => "Your policy has already expired"
+                'message' => 'Your policy has already expired',
             ], 404);
         }
 
