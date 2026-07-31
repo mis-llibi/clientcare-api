@@ -225,8 +225,7 @@ class DesktopClientRequestController extends Controller
         }
 
 
-        $today = Carbon::today();
-        $incepto = Carbon::parse($findPatient->incepto)->startOfDay();
+
 
 
         // Validate if we find the patient
@@ -252,6 +251,9 @@ class DesktopClientRequestController extends Controller
                 'message' => "Select the Patient is Employee"
             ], 404);
         }
+
+        $today = Carbon::today();
+        $incepto = Carbon::parse($findPatient->incepto)->startOfDay();
 
         if ($today->greaterThan($incepto)) {
             return response()->json([
@@ -976,9 +978,12 @@ class DesktopClientRequestController extends Controller
             ], 404);
         }
 
-        if($now->greaterThan($findPatient->incepto)){
+        $today = Carbon::today();
+        $incepto = Carbon::parse($findPatient->incepto)->startOfDay();
+
+        if ($today->greaterThan($incepto)) {
             return response()->json([
-                'message' => "Your policy has already expired"
+                'message' => 'Your policy has already expired',
             ], 404);
         }
 
