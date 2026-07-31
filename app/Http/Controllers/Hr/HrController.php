@@ -267,9 +267,9 @@ class HrController extends Controller
                 't2.approval_code_loanumber',
             );
 
-        if ($id == 12) {
-            $q->whereBetween('t1.created_at', [$start, $end]);
-        }
+        // if ($id == 12) {
+        //     $q->whereBetween('t1.created_at', [$start, $end]);
+        // }
 
         // status filter
         $q->where(function ($query) use ($id, $defaultStatus) {
