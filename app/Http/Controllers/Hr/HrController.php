@@ -304,6 +304,9 @@ class HrController extends Controller
         $hrUser = request()->user();
         if ($hrUser && $hrUser->comp_code) {
             $q->where('t1.company_code', $hrUser->comp_code);
+            if($hrUser->comp_code == "KOOLR"){
+                $q->whereBetween('t1.created_at', [$start, $end]);
+            }
         }
 
         $sortDirection = ($id == 12) ? 'asc' : 'desc';
