@@ -151,13 +151,13 @@ class ClientRequestController extends Controller
         // Validate if the patient is dependent but it doesn't select "Patient is Dependent"
         if($findPatient->relation != "EMPLOYEE" && $patientType != "dependent"){
             return response()->json([
-                'message' => "Select the Patient is Dependent"
+                'message' => "Selected patient is an dependent."
             ], 404);
         }
 
         if($findPatient->relation == "EMPLOYEE" && $patientType == "dependent"){
             return response()->json([
-                'message' => "Select the Patient is Employee"
+                'message' => "Selected patient is an employee."
             ], 404);
         }
 
