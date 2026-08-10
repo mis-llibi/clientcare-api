@@ -310,7 +310,7 @@ class HrController extends Controller
         }
 
         $sortDirection = ($id == 12) ? 'asc' : 'desc';
-        $patients = $q->orderBy('t1.id', $sortDirection)->paginate(10);
+        $patients = $q->orderBy('t1.id', 'desc')->paginate(10);
 
         if ($patients->isEmpty()) return $patients;
 
