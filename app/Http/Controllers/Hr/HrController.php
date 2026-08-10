@@ -280,6 +280,8 @@ class HrController extends Controller
                       ->where('t1.status', '!=', 1);
             } elseif (is_array($id)) {
                 $query->where('t1.id', $id['val']);
+            } elseif($id == 13){
+                $query->whereIn('t1.status', [3, 11, 13]);
             } else {
                 $query->where('t1.status', $id);
             }
