@@ -339,6 +339,15 @@ class DesktopClientRequestController extends Controller
 
         }
 
+        $petrn_plan = [01,02,03,04];
+
+        // PETRON EXCLUSION IN CHSI
+        if(in_array($findPatient->plan, $petrn_plan) && $provider_id == 1608){
+            return response()->json([
+                'message' => 'This provider is excluded to your plan.'
+            ], 404);
+        }
+
         // COST CODE COMPANY
 
         $costcode_companies = ['ARTSA', 'ARTHA', 'AFRYP'];
