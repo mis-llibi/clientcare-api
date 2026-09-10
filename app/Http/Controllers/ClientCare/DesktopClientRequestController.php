@@ -285,6 +285,7 @@ class DesktopClientRequestController extends Controller
             $doctor_id = $doctor[0];
             $doctor_name = $doctor[1];
 
+            Log::info($provider_name);
 
 
 
@@ -302,11 +303,27 @@ class DesktopClientRequestController extends Controller
                     if(isset($hospitalExclusion->plan)){
 
                         $plan = explode(',', $hospitalExclusion->plan);
-                        if(in_array($findPatient->plan, $plan) && isset($findPatient->plan)){
+
+                        $custom_company_code = ['PAGS'];
+
+                        // Check if the plan of patient is included in hospital exclusion
+                        // Also, check if the companies hospital exclusion is specific by targeting the specific hospital ID
+                        if((
+                            in_array($findPatient->plan, $plan) &&
+                            isset($findPatient->plan) &&
+                            !in_array($findPatient->company_code, $custom_company_code)) ||
+                            (
+                                $findPatient->company_code == 'PAGS' &&
+                                $provider_id == 39
+                            )
+                        ){
                             return response()->json([
                                 'message' => "$provider_name_exclusion is excluded from your policy."
                             ], 404);
                         }
+
+
+
                     }elseif(!empty($hospitalExclusion)){
                         if($findPatient->company_code == "PETRN"){
                             return response()->json([
