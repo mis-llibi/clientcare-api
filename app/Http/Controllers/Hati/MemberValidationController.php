@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 use App\Models\ClientCare\Masterlist;
 use App\Models\ClientCare\RemainingTbl;
+use App\Models\ClientCare\HatiApiLogs;
 
 use function Symfony\Component\Clock\now;
 
@@ -19,6 +20,11 @@ class MemberValidationController extends Controller
         $member_id = strtoupper($request->member_id);
         $birth_date = $request->birth_date;
         $now = now()->format('Y-m-d');
+
+        HatiApiLogs::create([
+            'ip_address' => $request->ip(),
+            'link_parameter' => $request->fullUrl()
+        ]);
 
         $result = Masterlist::where('member_id', $member_id)
             ->where('birth_date', $birth_date)
