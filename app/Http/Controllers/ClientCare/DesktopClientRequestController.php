@@ -300,7 +300,14 @@ class DesktopClientRequestController extends Controller
                                         ->where('hospcode', $hospcode->hosp_code)
                                         ->first();
 
-                    if(isset($hospitalExclusion->plan)){
+                $allowMMCException = (
+                    $findPatient->member_id === "APHIX00153" &&
+                    $hospcode->hosp_code === "MMC"
+                );
+
+                if (!$allowMMCException) {
+
+                    if(isset($hospitalExclusion->plan)) {
 
                         $plan = explode(',', $hospitalExclusion->plan);
 
@@ -308,32 +315,36 @@ class DesktopClientRequestController extends Controller
 
                         // Check if the plan of patient is included in hospital exclusion
                         // Also, check if the companies hospital exclusion is specific by targeting the specific hospital ID
-                        if((
-                            in_array($findPatient->plan, $plan) &&
-                            isset($findPatient->plan) &&
-                            !in_array($findPatient->company_code, $custom_company_code)) ||
+
+                        if (
+                            (
+                                in_array($findPatient->plan, $plan) &&
+                                isset($findPatient->plan) &&
+                                !in_array($findPatient->company_code, $custom_company_code)
+                            ) ||
                             (
                                 $findPatient->company_code == 'PAGS' &&
                                 $provider_id == 39
                             )
-                        ){
+                        ) {
                             return response()->json([
                                 'message' => "$provider_name_exclusion is excluded from your policy."
                             ], 404);
                         }
 
+                    } elseif(!empty($hospitalExclusion)) {
 
-
-                    }elseif(!empty($hospitalExclusion)){
                         if($findPatient->company_code == "PETRN"){
                             return response()->json([
                                 'message' => "$provider_name_exclusion is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries"
                             ], 404);
                         }
+
                         return response()->json([
                             'message' => "$provider_name_exclusion is excluded from your policy."
                         ], 404);
                     }
+                }
 
 
                 }
