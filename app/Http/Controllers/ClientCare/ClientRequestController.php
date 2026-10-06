@@ -216,7 +216,13 @@ class ClientRequestController extends Controller
                     $provider->hosp_code === "MMC"
                 );
 
-                if(!$allowMMCException){
+                $abivaAllowedTMCClinicsOnly = (
+                    $findPatient->company_code === "APHI" &&
+                    $provider->hosp_code === "TMC" &&
+                    $provider->classification === 2
+                );
+
+                if(!$allowMMCException && !$abivaAllowedTMCClinicsOnly){
                     if(isset($hospitalExclusion->plan)){
                         $plan = explode(',', $hospitalExclusion->plan);
 

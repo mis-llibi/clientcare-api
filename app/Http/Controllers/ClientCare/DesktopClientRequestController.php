@@ -305,7 +305,13 @@ class DesktopClientRequestController extends Controller
                     $hospcode->hosp_code === "MMC"
                 );
 
-                if (!$allowMMCException) {
+                $abivaAllowedTMCClinicsOnly = (
+                    $findPatient->company_code === "APHI" &&
+                    $hospcode->hosp_code === "TMC" &&
+                    $hospcode->classification === 2
+                );
+
+                if (!$allowMMCException && !$abivaAllowedTMCClinicsOnly) {
 
                     if(isset($hospitalExclusion->plan)) {
 
@@ -1083,7 +1089,13 @@ class DesktopClientRequestController extends Controller
                         $hospcode->hosp_code === "MMC"
                     );
 
-                    if(!$allowMMCException){
+                    $abivaAllowedTMCClinicsOnly = (
+                        $findPatient->company_code === "APHI" &&
+                        $hospcode->hosp_code === "TMC" &&
+                        $hospcode->classification === 2
+                    );
+
+                    if(!$allowMMCException && !$abivaAllowedTMCClinicsOnly){
                         if(isset($hospitalExclusion->plan)){
 
                             $plan = explode(',', $hospitalExclusion->plan);
