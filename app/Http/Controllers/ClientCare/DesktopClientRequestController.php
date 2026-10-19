@@ -300,80 +300,80 @@ class DesktopClientRequestController extends Controller
                                         ->where('hospcode', $hospcode->hosp_code)
                                         ->first();
 
-                $allowMMCException = (
-                    $findPatient->member_id === "APHIX00153" &&
-                    $hospcode->hosp_code === "MMC"
-                );
+                    $allowMMCException = (
+                        $findPatient->member_id === "APHIX00153" &&
+                        $hospcode->hosp_code === "MMC"
+                    );
 
-                $abivaAllowedTMCClinicsOnly = (
-                    $findPatient->company_code === "APHI" &&
-                    $hospcode->hosp_code === "TMC" &&
-                    $hospcode->classification === 2
-                );
+                    $abivaAllowedTMCClinicsOnly = (
+                        $findPatient->company_code === "APHI" &&
+                        $hospcode->hosp_code === "TMC" &&
+                        $hospcode->classification === 2
+                    );
 
-                // SUMIFRU PLAN 4 AND 5 DEPENDENTS ACCESS FOR HEALTHWAY AND SAINT LUKES GLOBAL ONLY
-                // TAKE NOTE: THIS HOSPITAL EXCLUSION IS HARDCODE, IT IS NOT INDICATED IN HOSPITAL EXCLUSION TABLE BECAUSE IT IS FOR DEPENDENTS ONLY
-                $saintLukesGlobalId = 306;
-                $sumifruPlans = [4, 5];
-                $sumifruSubgroups = ['SSADI', 'SPSC', 'SPC', 'SDMSC', 'SAJMR', 'SAACP'];
-                $isSumifru = in_array($findPatient->company_code, $sumifruSubgroups);
-                $isRestrictedHospital = (
-                    $hospcode->hosp_code == 'HLTHWY' ||
-                    $hospcode->id == $saintLukesGlobalId
-                );
-                $isDependent = $patientType == 'dependent';
-                $isAllowedPlan = in_array($findPatient->plan, $sumifruPlans);
-                $allowedSumifruDependents = (
-                    $isSumifru &&
-                    $isRestrictedHospital &&
-                    $isDependent &&
-                    $isAllowedPlan
-                );
-                if (
-                    $isSumifru &&
-                    $isRestrictedHospital &&
-                    $isDependent &&
-                    !$isAllowedPlan
-                ) {
-                    return response()->json([
-                        'message' => "$provider_name_exclusion is excluded from your policy."
-                    ], 403);
-                }
+                    // SUMIFRU PLAN 4 AND 5 DEPENDENTS ACCESS FOR HEALTHWAY AND SAINT LUKES GLOBAL ONLY
+                    // TAKE NOTE: THIS HOSPITAL EXCLUSION IS HARDCODE, IT IS NOT INDICATED IN HOSPITAL EXCLUSION TABLE BECAUSE IT IS FOR DEPENDENTS ONLY
+                    $saintLukesGlobalId = 306;
+                    $sumifruPlans = [4, 5];
+                    $sumifruSubgroups = ['SSADI', 'SPSC', 'SPC', 'SDMSC', 'SAJMR', 'SAACP'];
+                    $isSumifru = in_array($findPatient->company_code, $sumifruSubgroups);
+                    $isRestrictedHospital = (
+                        $hospcode->hosp_code == 'HLTHWY' ||
+                        $hospcode->id == $saintLukesGlobalId
+                    );
+                    $isDependent = $patientType == 'dependent';
+                    $isAllowedPlan = in_array($findPatient->plan, $sumifruPlans);
+                    $allowedSumifruDependents = (
+                        $isSumifru &&
+                        $isRestrictedHospital &&
+                        $isDependent &&
+                        $isAllowedPlan
+                    );
+                    if (
+                        $isSumifru &&
+                        $isRestrictedHospital &&
+                        $isDependent &&
+                        !$isAllowedPlan
+                    ) {
+                        return response()->json([
+                            'message' => "$provider_name_exclusion is excluded from your policy."
+                        ], 403);
+                    }
 
 
 
-                if (!$allowMMCException && !$abivaAllowedTMCClinicsOnly && !$allowedSumifruDependents) {
+                    if (!$allowMMCException && !$abivaAllowedTMCClinicsOnly && !$allowedSumifruDependents) {
 
-                    if(isset($hospitalExclusion->plan)) {
-                        $plan = explode(',', $hospitalExclusion->plan);
+                        if(isset($hospitalExclusion->plan)) {
+                            $plan = explode(',', $hospitalExclusion->plan);
 
-                        $custom_company_code = ['PAGS'];
+                            $custom_company_code = ['PAGS'];
 
-                        // Check if the plan of patient is included in hospital exclusion
-                        // Also, check if the companies hospital exclusion is specific by targeting the specific hospital ID
+                            // Check if the plan of patient is included in hospital exclusion
+                            // Also, check if the companies hospital exclusion is specific by targeting the specific hospital ID
 
-                        if (
-                            (in_array($findPatient->plan, $plan) && isset($findPatient->plan) && !in_array($findPatient->company_code, $custom_company_code))
-                            ||($findPatient->company_code == 'PAGS' && $provider_id == 39)
-                        ) {
+                            if (
+                                (in_array($findPatient->plan, $plan) && isset($findPatient->plan) && !in_array($findPatient->company_code, $custom_company_code))
+                                ||($findPatient->company_code == 'PAGS' && $provider_id == 39)
+                            ) {
+                                return response()->json([
+                                    'message' => "$provider_name_exclusion is excluded from your policy."
+                                ], 404);
+                            }
+
+                        } elseif(!empty($hospitalExclusion)) {
+
+                            if($findPatient->company_code == "PETRN"){
+                                return response()->json([
+                                    'message' => "$provider_name_exclusion is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries"
+                                ], 404);
+                            }
+
                             return response()->json([
                                 'message' => "$provider_name_exclusion is excluded from your policy."
                             ], 404);
                         }
-
-                    } elseif(!empty($hospitalExclusion)) {
-
-                        if($findPatient->company_code == "PETRN"){
-                            return response()->json([
-                                'message' => "$provider_name_exclusion is excluded from your policy. Kindly refer to your onsite officer if you have additional inquiries"
-                            ], 404);
-                        }
-
-                        return response()->json([
-                            'message' => "$provider_name_exclusion is excluded from your policy."
-                        ], 404);
                     }
-                }
 
 
                 }
