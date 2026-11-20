@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'hati_api_key' => \App\Http\Middleware\HatiApiKeyMiddleware::class,
+            'corporate_api_key' => \App\Http\Middleware\PortalRequestApiKeyMiddleware::class,
         ]);
 
         //

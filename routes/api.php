@@ -211,3 +211,6 @@ Route::get('/debug-session', function () {
         'user' => auth('hr_users')->user()
     ];
 });
+
+
+require __DIR__ . "/corporate_api/corporate_api.php";

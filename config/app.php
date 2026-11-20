@@ -96,6 +96,8 @@ return [
 
     'hati-api-key' => env('HATI_API_KEY'),
 
+    'corporate_api_key' => env('CORPORATE_API_KEY'),
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key
