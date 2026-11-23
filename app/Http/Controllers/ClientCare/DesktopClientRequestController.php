@@ -139,7 +139,7 @@ class DesktopClientRequestController extends Controller
 
         $platform = $request->input('platform');
 
-        $allowed_platform = ['viber', 'onsite-admum', 'onsite-petrn', 'onsite-spc', 'onsite-mitsu', 'onsite-pswri'];
+        $allowed_platform = ['viber', 'onsite-admum', 'onsite-petrn', 'onsite-spc', 'onsite-mitsu', 'onsite-pswri', 'mobile'];
 
         $allowed_platform_company = [
             'admum' => ['ADMUM', 'ADMUP', 'ADMUS', 'AMPC'],
@@ -945,7 +945,7 @@ class DesktopClientRequestController extends Controller
 
         $platform = $request->input('platform', null);
 
-        $allowed_platform = ['viber', 'onsite-admum', 'onsite-petrn', 'onsite-spc', 'onsite-mitsu', 'onsite-pswri'];
+        $allowed_platform = ['viber', 'onsite-admum', 'onsite-petrn', 'onsite-spc', 'onsite-mitsu', 'onsite-pswri', 'mobile'];
 
         $allowed_platform_company = [
             'admum' => ['ADMUM', 'ADMUP', 'ADMUS', 'AMPC'],
